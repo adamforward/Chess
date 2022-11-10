@@ -340,6 +340,10 @@ class board:
     def AIAdvantageEval(self)->int:#only call this function after all moves have been generated and checked. going to search through a tree of ints for advantage parameter. 
         whiteAdvantage=0
         blackAdvantage=0
+        if len(self.whitePieces) + len(self.blackPieces)==2: #2 kings left
+            self.gameState+=1#tie game
+            self.advantage=0
+
         noMovesW=True
         noMovesB=True#store these for the checkmate and stalemate conditions
         for i in range(len(self.whitePieces)):#need to go back and make some adjustments to the generate available moves function so that it adds to the field and returns a list. 
@@ -353,9 +357,14 @@ class board:
                     if oldIndexes==[3,3]|oldIndexes==[3,4]|oldIndexes==[4,3]|oldIndexes==[4,4]:
                         whiteAdvantage+=len(self.whiteaVailableMoves[self.whitePieces[i]])*8#weigh control of the middle heavier, especially with moves 
                     if self.fullBoard[oldIndexes[0]][oldIndexes[1]].type=='p'&oldIndexes[0]<4:#black end is at 0, incentivise pawns to be far up. 
-                        whiteAdvantage+=(4-oldIndexes[0])*25
+                        whiteAdvantage+=(4-oldIndexes[0])*15
+            if len(self.whitePieces+self.blackPieces)<10: #late game advantage for wight 
+                    if self.fullBoard[oldIndexes[0]][oldIndexes[1]].type=='p'&oldIndexes[0]<4:
+                        whiteAdvantage+=(4-oldIndexes[0])*20
+                   
+
             for j in range(len(self.whiteaVailableMoves(self.whitePieces[i]))):
-                if self.whiteaVailableMoves(self.whitePieces[i])!=[]:
+                if self.whiteaVailableMoves(self.whitePieces[i])!=[]:#if its empty, either checkmate or stalemate.
                     noMovesW=True
                 newIndexes=self.whiteaVailableMoves[self.whitePieces[i]]
                 if self.fullBoard[newIndexes[0]][newIndexes[1]].value>self.fullBoard[oldIndexes[0]][oldIndexes[1]].value:
@@ -365,6 +374,7 @@ class board:
                         whiteAdvantage+=5
                     if newIndexes[0]<4: 
                         whiteAdvantage+=4
+                
                 if self.turn<=32 & len(self.whitePieces)+len(self.blackPieces)>10:# this is the midgame interval, different weights are applied here. 
                     if newIndexes[0]==4:
                         whiteAdvantage+=2
@@ -382,18 +392,16 @@ class board:
                     store2=piece.copy(self.fullBoard[oldIndexes[0]][oldIndexes[1]])
                     self.fullBoard[newIndexes[0]][newIndexes[1]]=self.fullBoard[oldIndexes[0]][oldIndexes[1]]
                     self.fullBoard[oldIndexes[0]][oldIndexes[1]]=piece(0,'n','n')
-                    if self.turn%2==1:
-                        self.turn+=1
-                        if self.inCheck()==True:#of available moves to put king in check is weighed pretty heavily. 
-                            whiteAdvantage+=20
-                        self.turn-=1
-                    else:
-                        if self.inCheck()==True:
-                            whiteAdvantage+=20
+                    temp=self.generateAvailableMoves(newIndexes[0],newIndexes[1])
+                    if self.blackIndexes["K"] in temp: #more efficient than calling check function
+                        whiteAdvantage+=20
+                    self.fullBoard[oldIndexes[0]][oldIndexes[1]]=store1
+                    self.fullBoard[newIndexes[0]][newIndexes[1]]=store2
+                    if self.turn%2==0&self.inCheck(): 
+                        blackAdvantage+=50#lateGame 
+                    if len(self.whitePieces+self.blackPieces)<10: 
+                        
 
-                if self.turn%2==0&self.inCheck()==True&self.turn<=32 & len(self.whitePieces)+len(self.blackPieces)>10: 
-                    blackAdvantage+=50
-                    
 
                 
                 
@@ -574,47 +582,4 @@ class board:
                 self.blackAvailableMoves["K"].append([10,10])
                 return True
             return False
-    def printBoard(self): 
-        for i in range(8): 
-            print(self.fullBoard[i][0].type, self.fullBoard[i][1].type, self.fullBoard[i][2].type, self.fullBoard[i][3].type,self.fullBoard[i][4].type, self.fullBoard[i][5].type, self.fullBoard[i][6].type, self.fullBoard[i][7].type)
     
-def boardTo1D(game:board):
-    re=[]
-    for i in len(game.fullBoard):
-        for j in len(game.fullBoard[i]):
-            re.append(game.fullBoard[i][j].type)
-    return re
-print("What team would you like to play as, w or b?")
-team=""
-while team!="w"|team!="b": 
-    team=sys.stdin.readline()
-    if team!="w"|team!="b": 
-        print("Please input a valid team.")
-from 
-def getCharArr(game:board)->list[list[CHAR]]: 
-    for i in game.fullBoard:
-        for j in game.fullBoard[i]:
-             
-        
-def playerMove(): 
-    validMove=False
-    if team=="w":
-        while validMove==False:
-            indexes={"a":0, "b":1, "c":2,"d":3,"e":4,"f":5,"g":6,"h":7}
-            print("What is the piece you want to move? example: a4")
-            thePieceCol=sys.stdin.readline()
-            c=indexes[thePieceCol]
-            thePieceRow=sys.stdin.readline()
-            r=int(thePieceRow)-1
-            if game.whiteIToP[r*10+c]!=None:
-                print("What is the new poisition?")
-                thePieceC=sys.stdin.readline()
-                newc=indexes[thePieceC]
-                thePieceR=sys.stdin.readline()
-                newr=int(thePieceR)-1
-                game.generateAvailableMoves(r,c)
-                game.canKSCastle()
-                game.canQSCastle()
-                if [newr, newc] in game.whiteaVailableMoves[game.whiteIToP[r*10+c]]:
-                    game.move(game.whitePieces.index(game.whiteIToP[r*10+c]), game.whiteaVailableMoves.index(game.whiteIToP[r*10+c]))
-                    validMove=True
