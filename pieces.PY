@@ -1,21 +1,10 @@
 from tkinter import CHAR
 from xmlrpc.client import boolean
-import numpy as np 
-from enum import Enum
 import copy 
-#next steps are going to be: go through and debug the board class. 
-#in the main, create a search function with the parameter depth, use thousands of simulated games in order to make the AI determine its next move. 
-#the depth searched by the AI will be perportional to how many pieces are left. 
-#when I get the game up and running, I will probably make some modifications to the "AIAdvantageEval" function
-class ind(Enum):
-    A=0
-    B=1
-    C=2
-    D=3
-    E=4
-    F=5
-    G=6
-    H=7
+import sys
+#I am currently looking into using matrix operations to improve efficiency, particularly within the generate available moves function and repetetive iterations within functions such as in check.  
+#I currently have all the functions I need to run a game with relatively little code, still have to debug though.  
+# #when I get the game up and running, I will probably make some modifications to the "AIAdvantageEval" function
 class piece:
     def __init__(self, val:int, type:CHAR, team:CHAR): 
         self.val=val
@@ -31,22 +20,22 @@ class board:
         self.inCheckStored=False
         self.AIteam=""
         self.gameState=0
-        self.fullBoard=((piece(500,'r','b'),piece(300,'k','b'),piece(300,'b','b'),piece(900,'q','b'),piece(0, 'K', 'b'),piece(300,'b','b'),\
-            piece(300,'k','b'), piece(500,'r','b')), (piece(100,'p','b'),piece(100,'p','b'),piece(100,'p','b'),piece(100,'p','b'),piece(100,'p','b'),\
-            piece(100,'p','b'),piece(100,'p','b'),piece(100,'p','b')),(piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),\
-            piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n')),\
-            ([piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n')]),\
-            ([piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),]),\
-            (piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n')),\
-            (piece(1,'p','w'),piece(1,'p','w'),piece(1,'p','w'),piece(1,'p','w'),piece(1,'p','w'),\
-            piece(1,'p','w'),piece(1,'p','w'),piece(1,'p','w')),\
-            (piece(500,'r','w'),piece(300,'k','w'),piece(300,'b','w'),piece(900,'q','w'),piece(0, 'K', 'w'),piece(300,'b','w'),\
-            piece(300,'k','w'), piece(500,'r','w')))
+        self.fullBoard=([piece(500,'r','b'),piece(300,'k','b'),piece(300,'b','b'),piece(900,'q','b'),piece(0, 'K', 'b'),piece(300,'b','b'),\
+            piece(300,'k','b'), piece(500,'r','b')], [piece(100,'p','b'),piece(100,'p','b'),piece(100,'p','b'),piece(100,'p','b'),piece(100,'p','b'),\
+            piece(100,'p','b'),piece(100,'p','b'),piece(100,'p','b')],[piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),\
+            piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n')],\
+            [piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n')],\
+            [piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),],\
+            [piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n'),piece(0,'n','n')],\
+            [piece(100,'p','w'),piece(100,'p','w'),piece(100,'p','w'),piece(100,'p','w'),piece(100,'p','w'),\
+            piece(100,'p','w'),piece(100,'p','w'),piece(100,'p','w')],\
+            [piece(500,'r','w'),piece(300,'k','w'),piece(300,'b','w'),piece(900,'q','w'),piece(0, 'K', 'w'),piece(300,'b','w'),\
+            piece(300,'k','w'), piece(500,'r','w')])
         self.turn=0 #every time turn=1 
         self.blackIndexes={"r1":(0,0),"r2":(0,7),"b1":(0,2),"b2":(0,5),"k2":(0,3),"k2":(0,6),"K":(0,4),"q":(0,3),\
             "p1":(1,0),"p2":(1,1),"p3":(1,2),"p4":(1,3),"p5":(1,4),"p6":(1,5),"p7":(1,6),"p8":(1,7)}
-        self.whiteIndexes={"r1":([7,0]),"r2":(7,7),"b1":(7,2),"b2":(7,5),"k2":(7,3),"k2":(7,4),"K":(7,5),"q":(7,4),\
-            "p1":(6,0),"p2":(6,1),"p3":(6,2),"p4":(6,3),"p5":(6,4),"p6":(6,5),"p7":(1,6),"p8":(1,7)}
+        self.whiteIndexes={"r1":(7,0),"r2":(7,7),"b1":(7,2),"b2":(7,5),"k2":(7,3),"k2":(7,4),"K":(7,5),"q":(7,4),\
+            "p1":(6,0),"p2":(6,1),"p3":(6,2),"p4":y(6,3),"p5":(6,4),"p6":(6,5),"p7":(1,6),"p8":(1,7)}
         self.blackIToP={0:"r1",7:"r2",5:"b1",5:"b2",1:"k1",6:"k2",4:"K",3:"q",\
             10:"p1",11:"p2",12:"p3",13:"p4",14:"p5",15:"p6",16:"p7",17:"p8"}
         self.whiteIToP={70:"r1",77:"r2",72:"b1",55:"b2",71:"k2",76:"k2",74:"K",73:"q",\
@@ -59,7 +48,7 @@ class board:
         self.whiteaVailableMoves={"r1":[],"r2":[],"b1":[],"b2":[],"k2":[(5,7),(5,5)],"K":[], "q":[], "k1":[(5,0),(5,2)], "p1":[(5,0),(6,0)]\
             ,"p2":[(5,1),(6,1)],"p3":[(5,2),(6,2)],"p4":[(5,3),(6,3)],"p5":[(5,4),(6,4)],"p6":[(5,5),(6,6)],"p7":[(5,6),(6,6)],"p8":[(5,7),(6,7)]}
         self.blackAvailableMoves={"r1":[],"r2":[],"b1":[],"b2":[],"k2":[(2,5),(2,7)],"K":[], "q":[], "k1":[(2,0),(2,2)], "p1":[(2,0),(3,0)]\
-            ,"p2":[(1,2),(1,3)],"p3":[(2,2),(2,3)],"p4":[(2,3),(3,3)],"p5":[n(5,4),(3,4)],"p6":[(2,5),(3,5)],"p7":[(2,6),(3,6)],"p8":[(2,7),(7,3)]}
+            ,"p2":[(1,2), (1,3)],"p3":[(2,2),(2,3)],"p4":[(2,3),(3,3)],"p5":[(5,4),(3,4)],"p6":[(2,5),(3,5)],"p7":[(2,6),(3,6)],"p8":[(2,7),(7,3)]}
         self.wHasSkipped=(False,False,False,False,False,False,False,False,False)
         self.bHasSkipped=(False,False,False,False,False,False,False,False,False)#this info is stored for en pessant captures.
         self.wHasMovedKing=False
@@ -94,7 +83,11 @@ class board:
         newB.whitePieces=copy.deepcopy(self.whitePieces)
         newB.whitePoints=self.whitePoints
         return newB
-
+    def getPlayerMove(self): 
+        while self.AIteam!="w"|self.AIteam!="b":
+            print("w or b?")
+            self.AIteam=input()#Eventually, I will get the graphics going so that it will be 
+        
     def generateAvailableMoves(self, row:int, col:int): #generates available moves for any piece on the board, takes old indexes as arguements, edits the field 
         #of available moves map 
             availableCol=[]
@@ -103,7 +96,7 @@ class board:
                 if self.fullBoard[row][col].team=='b':#white and black move
                     if self.fullBoard[row+1][col+1].team!=self.fullBoard[row][col].team&\
                     self.fullBoard[row+1][col-1].team!='n':
-                        availableMoves.append((row+1,col+1))
+                        availableMoves.append((row+1,col+1))#this function I could make changes to using numpy arrays and matrix operations.
                     if self.fullBoard[row+1,col-1].team!=self.fullBoard[row][col].team&\
                         self.fullBoard[row+1][col-1].team!='n':
                             availableMoves.append((row+1,col+1))
@@ -351,9 +344,9 @@ class board:
         whiteAdvantage=0
         blackAdvantage=0
         if self.turn>32:
-            if self.turn%2==0&self.inCheck()==True: #late and middle game. 
+            if self.turn%2==0&self.inCheckStored==True: #late and middle game. 
                 blackAdvantage+=50
-            if self.turn%2==1&self.inCheck()==True: 
+            if self.turn%2==1&self.inCheckStored==True: 
                 whiteAdvantage+=50
         if len(self.whitePieces) + len(self.blackPieces)==2: #2 kings left
             self.gameState+=1#tie game
@@ -451,10 +444,10 @@ class board:
                 blackAdvantage+=150
             if self.whiteIndexes["K"][0]==0|self.whiteIndexes["K"][0]==7|self.whiteIndexes["K"][1]==0|self.whiteIndexes["K"][1]==7:
                 blackAdvantage+=200
-        if self.blackPoints>self.whitePoints+100& len(self.whitePieces)+len(self.blackPieces)<10:
-            blackAdvantage-=(len(self.blackPieces)+len(self.whitePieces))*2#Incentivise trades if AI is up in the lategame 
-        noMovesW=True
-        noMovesB=True#store these for the checkmate and stalemate conditions
+            if self.blackPoints>self.whitePoints+100& len(self.whitePieces)+len(self.blackPieces)<10:
+                blackAdvantage-=(len(self.blackPieces)+len(self.whitePieces))*2#Incentivise trades if AI is up in the lategame 
+            noMovesW=True
+            noMovesB=True#store these for the checkmate and stalemate conditions
         for i in range(len(self.blackPieces)):#need to go back and make some adjustments to the generate available moves function so that it adds to the field and returns a list. 
             oldIndexes=(self.blackIndexes[self.blackPieces[i]])
             if self.turn<=32:#define early game as <= 32 moves, enough to move each piece once
@@ -527,31 +520,66 @@ class board:
                     self.advantage=0
                     self.gameState+=1
                     return 
-            if self.AIteam=="W": 
+            if self.AIteam=="w": 
                 self.advantage=whiteAdvantage-blackAdvantage
             else: 
                 self.advantage=blackAdvantage-whiteAdvantage
                         #the AI will create a tree of different boards and search for this advantage parameter to decide what move its doing. 
 
-
-
+    def printInfo(self): #this is a function that I'll only use for debugging 
+        self.printBoard()
+        self.allMovesGen()
+        print("White:")
+        for i in range(self.whitePieces): 
+            print(self.whitePieces[i])
+            print("is located at:")
+            print(self.whiteIndexes[i])
+            print("index to piece test:")
+            indexes=self.whiteIndexes[0]*10+self.whiteIndexes[1]
+            print(self.whiteIToP[indexes])
+            for j in range(self.whiteaVailableMoves[i]):
+                print("can move to:")
+                print(self.whiteaVailableMoves[self.whitePieces[i]][j])
                 #check to see if a move puts the player in check
     def allMovesGen(self):#only call the move function after this is called.
-        self.canKSCastle()
-        self.canQSCastle()
+        wKS=False
+        bKS=False
+        wQS=False
+        bQS=False
+        if self.bHasMovedKing==False:
+            if self.bHasMovedR2==False&self.fullBoard[0][6]==piece(0,'n','n')&self.fullBoard[0][5]==piece(0,'n','n'):
+                bKS=True
+            if self.bHasMovedR1==False&self.fullBoard[0][1]==piece(0,'n','n')&self.fullBoard[0][2]==piece(0,'n','n')&self.fullBoard[0][3]==piece(0,'n','n'):
+                bQS=True
+        if self.wHasMovedKing==False:
+                if self.wHasMovedR2==False&self.fullBoard[7][6]==piece(0,'n','n')&self.fullBoard[7][5]==piece(0,'n','n'):
+                    wKS=True
+                if self.wHasMovedR1==False&self.fullBoard[7][1]==piece(0,'n','n')&self.fullBoard[7][2]==piece(0,'n','n')&self.fullBoard[7][3]==piece(0,'n','n'):
+                    wQS=True
+        #self.canKSCastle() cutting this to improve efficiency. 
+        #self.canQSCastle()
         for i in self.whitePieces:
-            allMoves=self.generateAvailableMoves(self.whiteIndexes[self.whitePieces[0]],self.whiteIndexes[self.whitePieces[1]])
+            allMoves=self.generateAvailableMoves(self.whiteIndexes[self.whitePieces[i]][0],self.whiteIndexes[self.whitePieces[i]][1])
             self.whiteaVailableMoves[self.whitePieces[i]]=allMoves
-            self.playerMovesElimininator()
-        for j in self.whitePieces:
-            allMoves=self.generateAvailableMoves(self.whiteIndexes[self.whitePieces[0]],self.whiteIndexes[self.whitePieces[1]])
+            if (0,6) in allMoves|(0,5) in allMoves|(0,4) in allMoves|(0,7) in allMoves: 
+                bKS=False
+            if (0,4) in allMoves|(0,3) in allMoves|(0,2) in allMoves|(0,1) in allMoves|(0,0) in allMoves:
+                bQS=False
+            self.playerMovesElimininator()#looking to modify this function, only need to check whether or not q, r, b are pressuring king
+        for j in self.blackPieces:
+            allMoves=self.generateAvailableMoves(self.blackIndexes[self.whitePieces[i]][0],self.whiteIndexes[self.whitePieces[i]][1])
             self.whiteaVailableMoves[self.whitePieces[i]]=allMoves
+            if (7,6) in allMoves|(7,5) in allMoves|(7,4) in allMoves|(7,7) in allMoves: 
+                wKS=False
+            if (7,4) in allMoves|(7,3) in allMoves|(7,2) in allMoves|(7,1) in allMoves|(7,0) in allMoves:
+                wQS=False
+            if self.whiteIndexes["K"] in allMoves:
+                self.inCheckStored=True
             self.playerMovesElimininator()
-
     def move(self, index:int, availableMoveNum:int):#this will only be called after the gen all moves, so you dont have to run it twice 
         if self.turn%2==0: #if it's white's turn. 
             initialCoords=self.whiteIndexes[self.whitePieces[index]]
-            newIndexes=self.whiteaVailableMoves[self.whitePieces[index]]
+            newIndexes=self.whiteaVailableMoves[self.whitePieces[index]]#need to modify this function to make it more efficient
             if newIndexes==[9,9]: #king side castle
                 self.fullBoard[7][4]=piece(0,'n','n')
                 self.fullBoard[7][7]=piece(0,'n','n')
@@ -569,7 +597,7 @@ class board:
             oldpoints=self.fullBoard[newIndexes[0]][newIndexes[1]].val
             boldPiece=""
             if oldpoints>0:
-                boldPiece=self.blackIToP[newIndexes]
+                boldPiece=self.blackIToP[newIndexes[0]*10+newIndexes[1]]
             self.fullBoard[newIndexes[0]][newIndexes[1]]=piece.copy(self.fullBoard[initialCoords[0]][initialCoords[1]])
             if self.fullBoard[newIndexes[0]][newIndexes[1]].type=='p'&newIndexes[0]==0:#pawn to queen
                 self.fullBoard[newIndexes[0]][newIndexes[1]]=piece(900,'q','w')
@@ -578,34 +606,34 @@ class board:
             self.turn+=1
             if oldpoints>0:
                 self.blackPieces.remove(boldPiece)
-            self.blackIndexes[newIndexes]=None
-            self.blackIToP[newIndexes]=None
+            self.blackIndexes.pop([newIndexes])
+            self.blackIToP.pop([newIndexes])
             self.whiteIndexes[self.whitePieces[index]]=newIndexes
-            self.whiteIToP[newIndexes]=self.whitePieces[index]
-            self.fullBoard[newIndexes[0]][newIndexes[1]]=piece(0,'n','n')
-            if wOldPiece=="p1"&newIndexes[0]-initialCoords[0]==2: 
-                self.wHasSkipped[0]==True
-            if wOldPiece=="p2"&newIndexes[0]-initialCoords[0]==2: 
-                self.wHasSkipped[1]==True
-            if wOldPiece=="p3"&newIndexes[0]-initialCoords[0]==2: 
-                self.wHasSkipped[2]==True
-            if wOldPiece=="p4"&newIndexes[0]-initialCoords[0]==2: 
-                self.wHasSkipped[3]==True
-            if wOldPiece=="p5"&newIndexes[0]-initialCoords[0]==2: 
-                self.wHasSkipped[4]==True
-            if wOldPiece=="p6"&newIndexes[0]-initialCoords[0]==2: 
-                self.wHasSkipped[5]==True
-            if wOldPiece=="p7"&newIndexes[0]-initialCoords[0]==2: 
-                self.wHasSkipped[6]==True
-            if wOldPiece=="p8"&newIndexes[0]-initialCoords[0]==2: 
-                self.wHasSkipped[7]==True
+            self.whiteIToP[newIndexes[0]*10+newIndexes[1]]=self.whitePieces[index]#have to reset all fields to reflect information on the new board. 
+            self.fullBoard[initialCoords[0]][initialCoords[1]]=piece(0,'n','n')
+            if wOldPiece=="p1"&newIndexes[0]-initialCoords[0]==-2: 
+                self.wHasSkipped[0]=True
+            if wOldPiece=="p2"&newIndexes[0]-initialCoords[0]==-2: 
+                self.wHasSkipped[1]=True
+            if wOldPiece=="p3"&newIndexes[0]-initialCoords[0]==-2: 
+                self.wHasSkipped[2]=True
+            if wOldPiece=="p4"&newIndexes[0]-initialCoords[0]==-2: 
+                self.wHasSkipped[3]=True
+            if wOldPiece=="p5"&newIndexes[0]-initialCoords[0]==-2: 
+                self.wHasSkipped[4]=True
+            if wOldPiece=="p6"&newIndexes[0]-initialCoords[0]==-2: 
+                self.wHasSkipped[5]=True
+            if wOldPiece=="p7"&newIndexes[0]-initialCoords[0]==-2: 
+                self.wHasSkipped[6]=True
+            if wOldPiece=="p8"&newIndexes[0]-initialCoords[0]==-2: 
+                self.wHasSkipped[7]=True
         else: 
             initialCoords=self.blackIndexes[self.blackPieces[index]]
-            newIndexes=self.generateAvailableMoves(initialCoords[0],initialCoords[1])[availableMoveNum]
+            newIndexes=self.blackAvailableMoves(self.blackPieces[index])[availableMoveNum]
             oldpoints=self.fullBoard[newIndexes[0]][newIndexes[1]].val
             oldPiece=""
             if oldpoints>0:
-                oldPiece=self.whiteIToP[newIndexes[0]*10+newIndexes[1]*10]
+                oldPiece=self.whiteIToP[newIndexes[0]*10+newIndexes[1]]
             self.fullBoard[newIndexes[0]][newIndexes[1]]=self.fullBoard[initialCoords[0]][initialCoords[1]]
             if self.fullBoard[newIndexes[0]][newIndexes[1]].type=='p'&newIndexes[0]==0:#pawn to queen
                 self.fullBoard[newIndexes[0]][newIndexes[1]]=piece(9,'q','w')
@@ -649,7 +677,8 @@ class board:
                 self.wHasSkipped[7]==True
             for i in self.whitePieces:
                 self.whiteaVailableMoves[self.whitePieces[i]].clear()#reset the board
-    def playerMovesElimininator(self): #need to remove pieces 
+        self.inCheckStored=False
+    def playerMovesElimininator(self): #this function test whether or not each move results in a checkmate. 
         oldBoard=copy.deepcopy(self.fullBoard)
         if self.turn%2==0:
             for i in len(self.whitePieces):
@@ -712,65 +741,162 @@ class board:
                 self.blackAvailableMoves["K"].append([10,10])
                 return True
             return False
+    def printBoard(self):
+        for i in range(8):
+            print(self.fullBoard[i][0].type, self.fullBoard[i][1].type, self.fullBoard[i][2].type, self.fullBoard[i][3].type,self.fullBoard[i][4].type, self.fullBoard[i][5].type, self.fullBoard[i][6].type, self.fullBoard[i][7].type)
+
 class treeNode: 
     def __init__(self, pgame:board) -> None:
-        self.children=[]#list of board classes
-        self.depth=0
-        self.parent=None#previous board 
-        self.game=None
-def generateTopMoves(currGame:board, numMoves: int): 
-        re=[]
-        min=-100000000
-        currGame.allMovesGen()
-        currGame.playerMovesElimininator()#depth first search. Start with a given board that represents a possible move. 
-        placeHolder=currGame.deepClone()
-        if currGame.turn==0:
-            for i in currGame.whitePieces: 
-                for j in currGame.whiteaVailableMoves[currGame.whitePieces[i]]:
-                    if len(re)<numMoves: 
-                        re.append(currGame.whiteaVailableMoves[currGame.whitePieces[i]][j])
-                    else: 
-                        currGame.move(j,i)
-                        currGame.allMovesGen()
-                        currGame.playerMovesElimininator()#depth first search. Start with a given board that represents a possible move. 
-                        currGame.AIAdvantageEval()
-                        re.sort(currGame.game.advantage)
-                        if re[0]< currGame.game.advantage:
-                            re.pop(0)
-                            re.append(i,j)#this function generates the n moves that put the player in the best position.
+        self.children=(treeNode,treeNode,treeNode,treeNode,treeNode)#list of board classes
+        self.level=0
+        self.parent=treeNode#previous board 
+        self.game=board
+def generateTopMoves(currGame:board, numMoves: int): #this function works for either team, so it can simulate human moves. 
+    re=[]
+    currGame.allMovesGen()
+    currGame.playerMovesElimininator()#depth first search. Start with a given board that represents a possible move. 
+    placeHolder=currGame.deepClone()
+    if currGame.turn==0:
+        for i in currGame.whitePieces: 
+            for j in currGame.whiteaVailableMoves[currGame.whitePieces[i]]:
+                if len(re)<numMoves: 
+                    currGame.move(j,i)
+                    currGame.allMovesGen() 
+                    currGame.AIAdvantageEval()
+                    re.append(currGame)
+                else: 
+                    currGame.move(j,i)
+                    currGame.allMovesGen() 
+                    currGame.AIAdvantageEval()
+                    re.sort(key=lambda x:x.advantage)#sorts by the advantage parameter. 
+                    if currGame.AIteam=="b":
+                        if re[0].advantage < currGame.advantage:
+                            re[0]=currGame
                         currGame=placeHolder
-        else:
-            for i in currGame.blackPieces: 
-                for j in currGame.blackaVailableMoves[currGame.blackPieces[i]]:
-                    if len(re)<numMoves: 
-
-                        re.append(currGame.game.blackaVailableMoves[currGame.blackPieces[i]][j])
                     else: 
-                        currGame.move(j,i)
-                        currGame.allMovesGen()
-                        currGame.playerMovesElimininator()#depth first search. Start with a given board that represents a possible move. 
-                        currGame.AIAdvantageEval()
-                        re.sort(currGame.advantage)
+                        if re[0].advantage > currGame.advantage:
+                            re[0]=currGame
+                        currGame=placeHolder
+    else:
+        for i in currGame.blackPieces: 
+            for j in currGame.blackAvailableMoves[currGame.blackPieces[i]]:
+                if len(re)<numMoves: 
+                    re.append(currGame.blackAvailableMoves[currGame.blackPieces[i]][j])
+                else: #if its black vs if its white. 
+                    currGame.move(j,i)
+                    currGame.allMovesGen()
+                    currGame.playerMovesElimininator()#depth first search. Start with a given board that represents a possible move. 
+                    currGame.AIAdvantageEval()
+                    re.sort(currGame.advantage)
+                    if currGame.AIteam=="w":
                         if re[0]< currGame.advantage:
                             re.pop(0)
                             re.append(i,j)#this function generates the n moves that put the player in the best position.
                         currGame=placeHolder
-        return re
-def search(currGame:treeNode, depth:int, currLevel:int, alphaBeta:int)->int:#Later, I want the depth to be predetermined by what stage of the game it is, earlier=less depth. 
-    if inPlayAdvantage>currGame.advantage+alphaBeta:#always going to start on player turn. 
-        return #cut down on runtime by eliminating the really bad moves once 
-    if depth==currLevel:
-         if miniMax<currGame.advantage:
-            miniMax=currGame.advantage#going to do this for each move on the current board
+                    else: 
+                        if re[0]>currGame.advantage:
+                            re.pop(0)
+                            re.append(i,j)#this function generates the n moves that put the player in the best position.
+                        currGame=placeHolder
+    for i in re: 
+        re[i]=treeNode(re[i])
+    return re
+
+def search(currGame:treeNode, depth:int, alphaBeta:int)->int:#Later, I want the depth to be predetermined by what stage of the game it is, earlier=less depth. 
+    depth+=depth%2#need to end on an odd # of searches so that it's the players turn. 
+    currGame.level+=currGame.parent.level+1
+    destroy=False
+    miniMax=10000000000
+    if currGame.level==depth|currGame.game.gameState!=0:#if game is over, do not branch further on the tree. 
+        if currGame.game.advantage<miniMax: 
+            miniMax=currGame.game.advantage
+            return
+    elif currGame.game.advantage<alphaBeta: #if too bad of an advantage is reached, exit the search function
+        miniMax=miniMax=currGame.game.advantage
+        destroy=True
+        while currGame.level!=1: 
+            currGame=currGame.parent#go to the top of the tree, set children to none to stop searching
+        currGame.children=()
+        return
+    else:
+        if destroy!=False&currGame.children==():
+            currGame.children=generateTopMoves(currGame,5)#5 top moves for now, may change this based on how things run
+        for i in len(currGame.children): 
+            search(currGame.children[i],depth, alphaBeta)#use backtracking/recursion to generate everything. returning will jump to this statement. 
+    return miniMax#this parameter is what the AI will base each move on 
+def AImove(game:board):
+    bestSearch=-100000000
+    moveIndexes=(0,0)
+    reference=game.deepClone()
+    if game.AIteam=="w": 
+        for i in range(game.whitePieces):
+            for j in game.whiteaVailableMoves[game.whitePieces[j]]: 
+                game=reference
+                game.move
+                currSearch=treeNode(game)
+                currScore=search(currSearch, 6, -200)
+                if bestSearch<currScore: #eventually I want to figure out algorithms for evaluating depth and alphaBeta based on board conditions, but I need to look at runtimes first. 
+                    moveIndexes=(i,j)
+                    bestSearch=currScore
+    else: 
+        for i in range(game.blackPieces):
+            for j in game.blackAvailableMoves[game.whitePieces[j]]: 
+                currSearch=treeNode(game)
+                currScore=search(currSearch, 6, -200)
+                if bestSearch<currScore: #eventually I want to figure out algorithms for evaluating depth and alphaBeta based on board conditions, but I need to look at runtimes first. 
+                    moveIndexes=(i,j)
+                    bestSearch=currScore
+    game.move(moveIndexes[0],moveIndexes[1])
+def playerMove(game:board):
+    game.printBoard() 
+    game.allMovesGen()
+    print("indexes of piece? ex. A4, case sensitive")
+    valid=False
+    row=-1
+    col=-1#need variables to be nonLocal
+    newRow=-1
+    newCol=-1
+    Piece=""
+    if game.turn%2==0:
+        while valid==False:
+            strInd=input()
+            row=ord(strInd[1])-ord('1')#1 is row zero here, take user input, convert char to int using ascii
+            col=ord(strInd[0])-ord('A')#A is col 0, B is col 1, etc. 
             
-    if currGame.AIteam=="b": 
-        
-        if miniMax<currGame.advantage: 
-            miniMax=currGame.advantage#going to do this for each move on the current board
-            
-    else:  
-        if currGame.turn%2==0: 
-            
-            
-inPlayAdvantage=0
+            if row*10+col in game.whiteIToP:
+                Piece=game.whiteIToP[row*10+col]
+                valid=True#needs to map to a value. 
+            print("Where do you want to move it?")
+            strInt=input()
+            valid2=False
+            newRow=ord(strInt[1])-ord('1')#1 is row zero here, take user input, convert char to int using ascii
+            newCol=ord(strInt[0])-ord('A')#A is col 0, B is col 1, etc. 
+            if (newRow, newCol) in game.whiteaVailableMoves[Piece]:
+                valid2=True
+            if valid2==False: 
+                valid=False
+        i1=game.whitePieces.index(Piece)
+        i2=game.whiteaVailableMoves[Piece].index(Piece)#this could be done more efficiently, because the move function was designed for the AI to do all this quickly, but efficiency in the player move is far less important. 
+        game.move(i1,i2)
+    else: 
+        while valid==False:
+            strInd=input()
+            row=ord(strInd[1])-ord('1')#1 is row zero here, take user input, convert char to int using ascii
+            col=ord(strInd[0])-ord('A')#A is col 0, B is col 1, etc. 
+            if row*10+col in game.blackIToP:
+                Piece=game.blackIToP[row*10+col]
+                valid=True#needs to map to a value. 
+            print("Where do you want to move it?")
+            strInt=input()
+            valid2=False
+            newRow=ord(strInt[1])-ord('1')#1 is row zero here, take user input, convert char to int using ascii
+            newCol=ord(strInt[0])-ord('A')#A is col 0, B is col 1, etc. 
+            if (newRow, newCol) in game.blackAvailableMoves[Piece]:
+                valid2=True
+            if valid2==False: 
+                valid=False
+        i1=game.blackPieces.index(Piece)
+        i2=game.blackAvailableMoves[Piece].index(Piece)#this could be done more efficiently, because the move function was designed for the AI to do all this quickly, but efficiency in the player move is far less important. 
+        game.move(i1,i2)
+
    
