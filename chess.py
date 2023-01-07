@@ -55,6 +55,8 @@ class board:
         self.bHasMovedR1=False
         self.bHasMovedR2=False
         self.AIAdvantage=0
+
+
     def deepClone(self):#will need to do this once for AI to work.
         newB=board()
         newB.AIteam=self.AIteam
@@ -81,6 +83,7 @@ class board:
         newB.whitePieces=copy.deepcopy(self.whitePieces)
         newB.whitePoints=self.whitePoints
         return newB
+
     def getPlayerMove(self): 
         while self.AIteam!="w"|self.AIteam!="b":
             print("w or b?")
@@ -103,6 +106,9 @@ class board:
         elif self.fullBoard[row][col].type=='q':
             re=self.rookMoves(row, col)
             re.append(self.bishopMoves(row,col))
+        else: 
+            return None
+
     def generatePawnMovesw(self,row, col):#white starts at row 6
         re=[]
         if row==6 and self.fullBoard[row][col].team=='n': #skipping first 
@@ -138,6 +144,8 @@ class board:
                 if self.fullBoard[3][col+1].team=='b' and self.fullBoard[3][col+1].type=='p': 
                     if ord(self.blackIToP[30+col+1][1])-ord(1)==col+1:
                         re.append(30+col+1)
+
+
     def generatePawnMovesb(self, row, col):#black starts at row 1, index goes up. only difference is the reference point of 3 for en pessant changes to 5, row+=1 instead of -=1 
         re=[]
         if row==1 and self.fullBoard[row][col].team=='n': #skipping first 
@@ -173,9 +181,12 @@ class board:
                 if self.fullBoard[5][col+1].team=='w' and self.fullBoard[5][col+1].type=='p': 
                     if ord(self.blackIToP[50+col+1][1])-ord(1)==col+1:
                         re.append(50+col+1)
+
+
     def knightMoves(self, row: int, col: int):#knight moves +3 and +1 in either direction
         #need to implement boundary conditions 
         re=[]
+        knightMoves=([1,3],[-1,3],[1,-3])
         team=self.fullBoard[row][col].team
         if row<1: #in the corner
             if col<1:#can only add to row and col here  
@@ -402,6 +413,8 @@ class board:
                 if self.fullBoard[row+3][col-1].team!=team:
                     re.append(10*(row+3)+col-1)
         return re
+
+
     def bishopMoves(self, row:int, col:int):
         team=self.fullBoard[row][col]
         re=[]
@@ -446,6 +459,8 @@ class board:
             if self.fullBoard[temprow][tempcol].team!='n': #if it's the oppossite team
                 break
         return re
+
+
     def rookMoves(self, row:int, col:int): #same idea as bishop, but only one changes at a time.
         re=[]
         team=self.fullBoard[row][col]
@@ -498,192 +513,18 @@ class board:
         if self.fullBoard[row+1][col-1].team!=team and row+1<=7 and col-1>=0:
             re.append(10*(row+1)+col-1)
         return re
+
+
     def AIAdvantageEval(self):#only call this function after all moves have been generated and checked. going to search through a tree of ints for advantage parameter. 
-        whiteAdvantage=0
-        blackAdvantage=0
-        if self.turn>32:
-            if self.turn%2==0 and self.inCheckStored==True: #late and middle game. 
-                blackAdvantage+=50
-            if self.turn%2==1 and self.inCheckStored==True: 
-                whiteAdvantage+=50
-        if len(self.whitePieces) + len(self.blackPieces)==2: #2 kings left
-            self.gameState+=1#tie game
-            self.advantage=0
-            return 
-        if len(self.blackPieces)==1:#last piece is the black king
-            if self.blackIndexes["K"][0]==2 or self.blackIndexes["K"][0]==5 or self.blackIndexes["K"][1]==self.blackIndexes["K"][1]==5:
-            #has to be weighted heavily, this is to pushes the king to the edge for checkmate
-                whiteAdvantage+=100 
-            if self.blackIndexes["K"][0]==1 or self.blackIndexes["K"][0]==6 or self.blackIndexes["K"][1]==1 or self.blackIndexes["K"][1]==6:
-                whiteAdvantage+=150
-            if self.blackIndexes["K"][0]==0 or self.blackIndexes["K"][0]==7 or self.blackIndexes["K"][1]==0 or self.blackIndexes["K"][1]==7:
-                whiteAdvantage+=200
-        if self.whitePoints>self.blackPoints+100 and len(self.blackPieces)+len(self.whitePieces)<10:
-            whiteAdvantage-=(len(self.blackPieces)+len(self.whitePieces))*2#Incentivise trades if AI is up in the lategame 
-        noMovesW=True
-        noMovesB=True#store these for the checkmate and stalemate conditions
-        for i in range(len(self.whitePieces)):#need to go back and make some adjustments to the generate available moves function so that it adds to the field and returns a list. 
-            oldIndexes=(self.whiteIndexes[self.whitePieces[i]])
-            if self.turn<=32:#define early game as <= 32 moves, enough to move each piece once
-                whiteAdvantage+=2*len(self.whiteaVailableMoves[self.whitePieces[i]])#weigh this heavily early game for piece development. 
-                if oldIndexes==[3,3]|oldIndexes==[3,4]|oldIndexes==[4,3]|oldIndexes==[4,4]:#favor control of middle of the board in early game.
-                    whiteAdvantage+=self.whiteaVailableMoves[self.whitePieces[i]]*5#Moves from middle. 
-            if self.turn>=32 & len(self.whitePieces)+len(self.blackPieces)>10:# this is the midgame interval, different weights are applied here. 
-                whiteAdvantage+=len(self.whiteaVailableMoves[self.whitePieces[i]])
-                if oldIndexes==[3,3]|oldIndexes==[3,4]|oldIndexes==[4,3]|oldIndexes==[4,4]:
-                    whiteAdvantage+=len(self.whiteaVailableMoves[self.whitePieces[i]])*8#weigh control of the middle heavier, especially with moves 
-                if self.fullBoard[oldIndexes[0]][oldIndexes[1]].type=='p'&oldIndexes[0]<4:#black end is at 0, incentivise pawns to be far up. 
-                    whiteAdvantage+=(4-oldIndexes[0])*15
-            if len(self.whitePieces+self.blackPieces)<10: #late game advantage for white, different weights on everything. Can search deeper into boards late in the game. 
-                whiteAdvantage+=len(self.whiteaVailableMoves[self.whitePieces[i]])
-                if self.fullBoard[oldIndexes[0]][oldIndexes[1]].type=='p'&oldIndexes[0]<4:
-                    whiteAdvantage+=(4-oldIndexes[0])*30#weigh far up pawns heavier in late game 
-                if oldIndexes==[3,3]|oldIndexes==[3,4]|oldIndexes==[4,3]|oldIndexes==[4,4]:
-                    whiteAdvantage+=len(self.whiteaVailableMoves[self.whitePieces[i]])#weigh control of the middle light in late game. 
-            for j in range(len(self.whiteaVailableMoves(self.whitePieces[i]))):
-                if self.whiteaVailableMoves(self.whitePieces[i])!=[]:#if its empty, either checkmate or stalemate.
-                    noMovesW=False#can't set this back to true. 
-                newIndexes=self.whiteaVailableMoves[self.whitePieces[i]][j]
-                if self.fullBoard[newIndexes[0]][newIndexes[1]].value>self.fullBoard[oldIndexes[0]][oldIndexes[1]].value:
-                    whiteAdvantage+=self.fullBoard[newIndexes[0]][newIndexes[1]].value-self.fullBoard[oldIndexes[0]][oldIndexes[1]].value-100# if pawn attacking queen, 600 point advantage
-                if self.turn<=32:#earlygame 
-                    if newIndexes==[3,3]|newIndexes==[3,4]|newIndexes==[4,3]|newIndexes==[4,4]:# favor # of moves to the middle of board
-                        whiteAdvantage+=5
-                    if newIndexes[0]<4: 
-                        whiteAdvantage+=4
-                if self.turn>=32 & len(self.whitePieces)+len(self.blackPieces)>10:# this is the midgame interval, different weights are applied here. 
-                    if newIndexes[0]==4:
-                        whiteAdvantage+=2
-                    if newIndexes[0]==3:
-                        whiteAdvantage+=6
-                    if newIndexes[0]==2:#if you're pressuring squares on black's side.
-                        whiteAdvantage+=10
-                    if newIndexes[0]==1:
-                        whiteAdvantage+=14
-                    if newIndexes[0]==0: 
-                        whiteAdvantage+=18
-                    if newIndexes==[3,3]|newIndexes==[3,4]|newIndexes==[4,3]|newIndexes==[4,4]:# favor # of moves to the middle of board
-                        whiteAdvantage+=5
-                    store1=self.fullBoard[oldIndexes[0]][oldIndexes[1]].copy()
-                    store2=self.fullBoard[oldIndexes[0]][oldIndexes[1]].copy()
-                    self.fullBoard[newIndexes[0]][newIndexes[1]]=self.fullBoard[oldIndexes[0]][oldIndexes[1]]
-                    self.fullBoard[oldIndexes[0]][oldIndexes[1]]=piece(0,'n','n')
-                    temp=self.generateAvailableMoves(newIndexes[0],newIndexes[1])
-                    if self.blackIndexes["K"] in temp: #more efficient than calling check function, this is number of moves that put king in check.
-                        whiteAdvantage+=20
-                    self.fullBoard[oldIndexes[0]][oldIndexes[1]]=store1
-                    self.fullBoard[newIndexes[0]][newIndexes[1]]=store2
-                if len(self.whitePieces+self.blackPieces)<10: #lateGame advantage
-                    store1=self.fullBoard[oldIndexes[0]][oldIndexes[1]].copy()
-                    store2=self.fullBoard[oldIndexes[0]][oldIndexes[1]].copy()
-                    self.fullBoard[newIndexes[0]][newIndexes[1]]=self.fullBoard[oldIndexes[0]][oldIndexes[1]]
-                    self.fullBoard[oldIndexes[0]][oldIndexes[1]]=piece(0,'n','n')
-                    temp=self.generateAvailableMoves(newIndexes[0],newIndexes[1])
-                    if self.blackIndexes["K"] in temp: 
-                        whiteAdvantage+=30# weigh this parameter heavier in late game. 
-                        #all these different control of board parameters are far less important in the late game, because the 
-                    if newIndexes==[3,3]|newIndexes==[3,4]|newIndexes==[4,3]|newIndexes==[4,4]:# favor # of moves to the middle of board
-                        whiteAdvantage+=2
-            #exit for loop 
-            if noMovesW==True&self.turn%2==0: #either stalemate or checkMate
-                if self.inCheckStored==True:
-                    blackAdvantage+=1000000
-                    whiteAdvantage-=1000000
-                    self.gameState+=1
-                else: 
-                    self.advantage=0
-                    self.gameState+=1
-                    return
-        if len(self.whitePieces)==1:#go through and do same iterations for black 
-            if self.whiteIndexes["K"][0]==2|self.whiteIndexes["K"][0]==5|self.whiteIndexes["K"][1]==2|self.whiteIndexes["K"][1]==5:
-            #has to be weighted heavily, this is to pushes the king to the edge for checkmate
-                blackAdvantage+=100 
-            if self.whiteIndexes["K"][0]==1|self.whiteIndexes["K"][0]==6|self.whiteIndexes["K"][1]==1|self.whiteIndexes["K"][1]==6:
-                blackAdvantage+=150
-            if self.whiteIndexes["K"][0]==0|self.whiteIndexes["K"][0]==7|self.whiteIndexes["K"][1]==0|self.whiteIndexes["K"][1]==7:
-                blackAdvantage+=200
-            if self.blackPoints>self.whitePoints+100& len(self.whitePieces)+len(self.blackPieces)<10:
-                blackAdvantage-=(len(self.blackPieces)+len(self.whitePieces))*2#Incentivise trades if AI is up in the lategame 
-            noMovesW=True
-            noMovesB=True#store these for the checkmate and stalemate conditions
-        for i in range(len(self.blackPieces)):#need to go back and make some adjustments to the generate available moves function so that it adds to the field and returns a list. 
-            oldIndexes=(self.blackIndexes[self.blackPieces[i]])
-            if self.turn<=32:#define early game as <= 32 moves, enough to move each piece once
-                blackAdvantage+=2*len(self.blackAvailableMoves[self.blackPieces[i]])#weigh this heavily early game for piece development. 
-                if oldIndexes==[3,3]|oldIndexes==[3,4]|oldIndexes==[4,3]|oldIndexes==[4,4]:#favor control of middle of the board in early game.
-                    blackAdvantage+=self.blackAvailableMoves[self.blackPieces[i]]*5#Moves from middle. 
-            if self.turn>32 & len(self.blackPieces)+len(self.whitePieces)>10:# this is the midgame interval, different weights are applied here. 
-                blackAdvantage+=len(self.blackAvailableMoves[self.blackPieces[i]])
-                if oldIndexes==[3,3]|oldIndexes==[3,4]|oldIndexes==[4,3]|oldIndexes==[4,4]:
-                    blackAdvantage+=len(self.blackAvailableMoves[self.blackPieces[i]])*8#weigh control of the middle heavier, especially with moves 
-                if self.fullBoard[oldIndexes[0]][oldIndexes[1]].type=='p'&oldIndexes[0]<4:#black end is at 0, incentivise pawns to be far up. 
-                    blackAdvantage+=(4-oldIndexes[0])*15
-            if len(self.blackPieces+self.whitePieces)<10: #late game advantage for white, different weights on everything. Can search deeper into boards late in the game. 
-                blackAdvantage+=len(self.blackAvailableMoves[self.blackPieces[i]])
-                if self.fullBoard[oldIndexes[0]][oldIndexes[1]].type=='p'&oldIndexes[0]<4:
-                    blackAdvantage+=(4-oldIndexes[0])*30#weigh far up pawns heavier in late game 
-                if oldIndexes==[3,3]|oldIndexes==[3,4]|oldIndexes==[4,3]|oldIndexes==[4,4]:
-                    blackAdvantage+=len(self.blackAvailableMoves[self.blackPieces[i]])#weigh control of the middle light in late game. 
-            for j in range(len(self.blackAvailableMoves(self.blackPieces[i]))):
-                if self.blackAvailableMoves(self.blackPieces[i])!=[]:#if its empty, either checkmate or stalemate.
-                    noMovesB=False
-                newIndexes=self.blackAvailableMoves[self.blackPieces[i]][j]
-                if self.fullBoard[newIndexes[0]][newIndexes[1]].value>self.fullBoard[oldIndexes[0]][oldIndexes[1]].value:
-                    blackAdvantage+=self.fullBoard[newIndexes[0]][newIndexes[1]].value-self.fullBoard[oldIndexes[0]][oldIndexes[1]].value-100# if pawn attacking queen, 600 point advantage
-                if self.turn<=32:#earlygame 
-                    if newIndexes==[3,3]|newIndexes==[3,4]|newIndexes==[4,3]|newIndexes==[4,4]:# favor # of moves to the middle of board
-                        blackAdvantage+=5
-                    if newIndexes[0]<4: 
-                        blackAdvantage+=4
-                if self.turn>=32 & len(self.blackPieces)+len(self.blackPieces)>10:# this is the midgame interval, different weights are applied here. 
-                    if newIndexes[0]==4:
-                        blackAdvantage+=2
-                    if newIndexes[0]==3:
-                        blackAdvantage+=6
-                    if newIndexes[0]==2:#if you're pressuring squares on black's side.
-                        blackAdvantage+=10
-                    if newIndexes[0]==1:
-                        blackAdvantage+=14
-                    if newIndexes[0]==0: 
-                        blackAdvantage+=18
-                    if newIndexes==[3,3]|newIndexes==[3,4]|newIndexes==[4,3]|newIndexes==[4,4]:# favor # of moves to the middle of board
-                        blackAdvantage+=5
-                    store1=self.fullBoard[oldIndexes[0]][oldIndexes[1]].copy()
-                    store2=self.fullBoard[oldIndexes[0]][oldIndexes[1]].copy()
-                    self.fullBoard[newIndexes[0]][newIndexes[1]]=self.fullBoard[oldIndexes[0]][oldIndexes[1]]
-                    self.fullBoard[oldIndexes[0]][oldIndexes[1]]=piece(0,'n','n')
-                    temp=self.generateAvailableMoves(newIndexes[0],newIndexes[1])
-                    if self.whiteIndexes["K"] in temp: #more efficient than calling check function, this is number of moves that put king in check.
-                        blackAdvantage+=20
-                    self.fullBoard[oldIndexes[0]][oldIndexes[1]]=store1
-                    self.fullBoard[newIndexes[0]][newIndexes[1]]=store2
-                if len(self.whitePieces+self.blackPieces)<10: #lateGame advantage
-                    store1=piece.copy(self.fullBoard[oldIndexes[0]][oldIndexes[1]])
-                    store2=piece.copy(self.fullBoard[oldIndexes[0]][oldIndexes[1]])
-                    self.fullBoard[newIndexes[0]][newIndexes[1]]=self.fullBoard[oldIndexes[0]][oldIndexes[1]]
-                    self.fullBoard[oldIndexes[0]][oldIndexes[1]]=piece(0,'n','n')
-                    temp=self.generateAvailableMoves(newIndexes[0],newIndexes[1])
-                    if self.whiteIndexes["K"] in temp: 
-                        blackAdvantage+=30# weigh this parameter heavier in late game. 
-                        #all these different control of board parameters are far less important in the late game, because the 
-                    if newIndexes==[3,3]|newIndexes==[3,4]|newIndexes==[4,3]|newIndexes==[4,4]:# favor # of moves to the middle of board
-                        blackAdvantage+=2
-            #exit for loop 
-            if noMovesB==True&self.turn%2==1: #either stalemate or checkMate
-                if self.inCheckStored==True:
-                    whiteAdvantage=1000000
-                    blackAdvantage=-1000000
-                    self.gameState+=1
-                else: 
-                    self.advantage=0
-                    self.gameState+=1
-                    return 
-            if self.AIteam=="w": 
-                self.advantage=whiteAdvantage-blackAdvantage
-            else: 
-                self.advantage=blackAdvantage-whiteAdvantage
-                        #the AI will create a tree of different boards and search for this advantage parameter to decide what move its doing. 
-    def earlyGameAI(self):#seperating out early, mid and late game functions to make things more readable and organized, easy for debugging
+        if self.turn<=20: 
+            self.earlyGameAIEval()
+        elif self.turn>20 and len(self.blackPieces)>5 and len(self.whitePieces>5): 
+            self.midGameAIEval()
+        else: 
+            self.lateGameAIEval
+
+
+    def earlyGameAIEval(self):#seperating out early, mid and late game functions to make things more readable and organized, easy for debugging
         whiteAdvantage=0
         blackAdvantage=0
         noMovesW=True
@@ -708,7 +549,6 @@ class board:
                             blackAdvantage+=self.fullBoard[moveIndexes/10][moveIndexes]%10-self.fullBoard[currRow][currCol]-50
                             #if b pawn is attacking w queen and its black's turn, advantage is 850 points 
         if noMovesB==True and self.turn%2==1: #CheckMate, cannot stalemate within first 32 turns 
-                if self.inCheckStored==True:
                     whiteAdvantage=1000000
                     blackAdvantage=-1000000
                     self.gameState+=1
@@ -726,24 +566,209 @@ class board:
                 if moveIndexes==33 or moveIndexes==34 or moveIndexes==44 or moveIndexes==43:
                     #moves to the middle
                     whiteAdvantage+=3#once again, I will look at these weights after playing against it
-                if self.turn%2==1:
-                    if self.fullBoard[moveIndexes/10][moveIndexes%10].team=='w':
-                        if self.fullBoard[moveIndexes/10][moveIndexes%10].val>self.fullBoard[currRow][currCol]: 
-                            whiteAdvantage+=self.fullBoard[moveIndexes/10][moveIndexes]%10-self.fullBoard[currRow][currCol]-50
-        if noMovesW==True and self.turn%2==1: #CheckMate, cannot stalemate within first 32 turns 
-            if self.inCheckStored==True:
+                if self.turn%2==1 and self.fullBoard[moveIndexes/10][moveIndexes%10].team=='b' and self.fullBoard[moveIndexes/10][moveIndexes%10].val>self.fullBoard[currRow][currCol]: 
+                    blackAdvantage+=self.fullBoard[moveIndexes/10][moveIndexes%10]-self.fullBoard[currRow][currCol]-50
+        if noMovesW==True and self.turn%2==0: #CheckMate, cannot stalemate within first 20 turns 
                 blackAdvantage=1000000
                 whiteAdvantage=-1000000
                 self.gameState+=1
         if self.AIteam=="w": 
-            self.AIAdvantage=self.whitePoints-self.blackPoints+whiteAdvantage-blackAdvantage#white team for AI 
+            self.advantage=self.whitePoints-self.blackPoints+whiteAdvantage-blackAdvantage#white team for AI 
         else:
-            self.AIAdvantage=self.blackPoints-self.whitePoints+blackAdvantage-whiteAdvantage#black team for AI 
+            self.advantage=self.blackPoints-self.whitePoints+blackAdvantage-whiteAdvantage#black team for AI 
 
-    def midGameAI(self):# if turn is greater than 32 and if both teams have at least 5 pieces 
-        
 
-    def lateGameAI(self):
+    def midGameAIEval(self):# if turn is greater than 32 and if both teams have at least 5 pieces 
+        blackAdvantage=0
+        whiteAdvantage=0
+        noMovesBlack=False
+        noMovesWhite=False
+        if self.turn%2==0 and self.inCheckStored==True: #late and middle game. 
+            blackAdvantage+=50
+        if self.turn%2==1 and self.inCheckStored==True: 
+            whiteAdvantage+=50
+        for i in range(len(self.blackPieces)):
+            currIndex=self.blackIndexes[self.blackPieces[i]]
+            currRow=currIndex/10
+            currCol=currIndex%10
+            if currIndex==33 or currIndex==34 or currIndex==44 or currIndex==43:#favor moves from the middle heavier in midgame
+                blackAdvantage+=3*len(self.blackAvailableMoves[self.blackPieces[i]])
+            if self.fullBoard[currRow][currCol].type=='p':
+                if currRow==5: 
+                    blackAdvantage+=50 
+                if currRow==6: 
+                    blackAdvantage+=100
+            if len(self.blackAvailableMoves[self.blackPieces[i]])!=0:
+                noMovesBlack=False
+            for j in range(self.blackAvailableMoves[self.blackPieces[i]]):
+                moveIndexes=self.blackAvailableMoves[self.blackPieces[i]][j]
+                moveRow=moveIndexes/10
+                moveCol=moveIndexes%10
+                if moveRow==5: 
+                    blackAdvantage+=1
+                if moveRow==6:
+                    blackAdvantage+=3
+                if moveRow==7:
+                    blackAdvantage+=5#favor moves to other teams side slightly 
+                if moveIndexes==33 or moveIndexes==34 or moveIndexes==43 or moveIndexes==44: 
+                    blackAdvantage+=5
+                if self.turn%2==1 and self.fullBoard[moveRow][moveCol].team=='w' and self.fullBoard[moveRow][moveCol].val>self.fullBoard[currRow][currCol]: 
+                    blackAdvantage+=self.fullBoard[moveIndexes/10][moveIndexes]%10-self.fullBoard[currRow][currCol]-50
+        for i in range(len(self.whitePieces)):
+            currIndex=self.whiteIndexes[self.whitePieces[i]]
+            currRow=currIndex/10
+            currCol=currIndex%10
+            if currIndex==33 or currIndex==34 or currIndex==44 or currIndex==43:#favor moves from the middle heavier in midgame
+                whiteAdvantage+=3*len(self.whiteaVailableMoves[self.whitePieces[i]])
+            if self.fullBoard[currRow][currCol].type=='p':
+                if currRow==2: 
+                    whiteAdvantage+=50
+                if currRow==1: 
+                    whiteAdvantage+=100
+                if len(self.whiteaVailableMoves[self.whitePieces[i]])!=0:
+                    noMovesWhite=False
+            for j in range(self.whiteaVailableMoves[self.whitePieces[i]]):
+                moveIndexes=self.whiteaVailableMoves[self.whitePieces[i]][j]
+                moveRow=moveIndexes/10
+                moveCol=moveIndexes%10
+                if moveRow==5: 
+                    whiteAdvantage+=1
+                if moveRow==6:
+                    whiteAdvantage+=3
+                if moveRow==7:
+                    whiteAdvantage+=5#favor moves to other teams side slightly 
+                if moveIndexes==33 or moveIndexes==34 or moveIndexes==43 or moveIndexes==44: 
+                    whiteAdvantage+=5
+                if self.turn%2==1 and self.fullBoard[moveRow][moveCol].team=='b' and self.fullBoard[moveRow][moveCol].val>self.fullBoard[currRow][currCol]: 
+                    whiteAdvantage+=self.fullBoard[moveIndexes/10][moveIndexes]%10-self.fullBoard[currRow][currCol]-50
+        if noMovesWhite==True and self.turn%2==1: #CheckMate, cannot stalemate within first 32 turns 
+            if self.inCheckStored==True: 
+                blackAdvantage=1000000
+                whiteAdvantage=-1000000
+                self.gameState+=1
+            else: 
+                self.advantage=0
+                self.gameState=1
+        if noMovesBlack==True and self.turn%2==0: 
+            if self.inCheckStored==True: 
+                blackAdvantage=-1000000
+                whiteAdvantage=1000000
+                self.gameState+=1
+            else: 
+                blackAdvantage=0
+                whiteAdvantage=0
+                self.whitePoints=0
+                self.blackPoints=0
+                self.gameState=1
+        if self.AIteam=="w":
+            self.advantage=self.whitePoints-self.blackPoints+whiteAdvantage-blackAdvantage#white team for AI 
+        else:
+            self.advantage=self.blackPoints-self.whitePoints+blackAdvantage-whiteAdvantage#black team for AI 
+
+
+    def lateGameAIEval(self):#I probably want to create some algorithm for comparing search depth to pieces left, less pieces left means deeper search
+        if len(self.whitePieces) + len(self.blackPieces)==2: #2 kings left
+            self.gameState+=1#tie game
+            self.advantage=0
+            return 
+        whiteAdvantage=0
+        blackAdvantage=0
+        noMovesW=True
+        noMovesB=True
+        if self.blackPoints<self.whitePoints:
+            whiteAdvantage+=3*(len(self.blackPieces)+len(self.whitePieces))#incentivise trades if you're up in the late game 
+        if self.blackPoints>self.whitePoints:
+            blackAdvantage+=3*(len(self.blackPieces)+len(self.whitePieces))
+        if self.turn%2==0 and self.inCheckStored==True: #late and middle game. 
+            blackAdvantage+=50
+        if self.turn%2==1 and self.inCheckStored==True: 
+            whiteAdvantage+=50
+        if len(self.blackPieces)==1:#If last piece is the black king, push it to the edge for checkmate
+            bKingRow=self.blackIndexes/10
+            bKingCol=self.blackIndexes%10
+            if bKingRow==2 or bKingRow==5:
+            #has to be weighted heavily, this is to pushes the king to the edge for checkmate
+                whiteAdvantage+=100 
+            if bKingCol==2 or bKingCol==5: 
+                whiteAdvantage+=100
+            if bKingRow==1 or bKingRow==6: 
+                whiteAdvantage+=150
+            if bKingCol==1 or bKingCol==6:
+                whiteAdvantage+=150
+            if bKingRow==0 or bKingRow==7: 
+                whiteAdvantage+=200
+            if bKingCol==0 or bKingCol==7:
+                whiteAdvantage+=200
+        if len(self.whitePieces)==1:#same for white
+            wKingRow=self.blackIndexes/10
+            wKingCol=self.blackIndexes%10
+            if wKingRow==2 or wKingRow==5:
+            #has to be weighted heavily, this is to pushes the king to the edge for checkmate
+                blackAdvantage+=100 
+            if wKingCol==2 or wKingCol==5: 
+                blackAdvantage+=100
+            if wKingRow==1 or wKingRow==6: 
+                blackAdvantage+=150
+            if wKingCol==1 or wKingCol==6:
+                blackAdvantage+=150
+            if wKingRow==0 or wKingRow==7: 
+                blackAdvantage+=200
+            if wKingCol==0 or wKingCol==7:
+                blackAdvantage+=200
+        for i in range(len(self.blackPieces)): 
+            currIndexes=self.blackIndexes[self.blackPieces[i]]
+            currRow=currIndexes/10
+            currCol=currIndexes%10
+            if self.fullBoard[currRow][currCol].type=='p': 
+                if currRow>4: 
+                    blackAdvantage+=currRow*30#this way, higher rows get more points for pawns
+            if len(self.blackAvailableMoves[self.blackPieces[i]])!=0:
+                noMovesB=False
+            for j in range(self.blackAvailableMoves[self.blackPieces[i]]):#no middle control weight for late game
+                moveIndexes=self.blackAvailableMoves[self.blackPieces[i]][j]
+                moveRow=moveIndexes/10
+                moveCol=moveIndexes%10
+                if self.turn%2==1 and self.fullBoard[moveRow][moveCol].team=='b' and self.fullBoard[moveRow][moveCol].val>self.fullBoard[currRow][currCol]: 
+                    whiteAdvantage+=self.fullBoard[moveIndexes/10][moveIndexes]%10-self.fullBoard[currRow][currCol]-50
+        for i in range(len(self.whitePieces)): 
+            currIndexes=self.whiteIndexes[self.whitePieces[i]]
+            currRow=currIndexes/10
+            currCol=currIndexes%10
+            if self.fullBoard[currRow][currCol].type=='p': 
+                if currRow<3: 
+                    whiteAdvantage+=(7-currRow)*30
+            if len(self.whiteaVailableMoves[self.blackPieces[i]])!=0:
+                noMovesW=False
+            for j in range(self.whiteaVailableMoves[self.whitePieces[i]]):
+                moveIndexes=self.whiteaVailableMoves[self.whitePieces[i]][j]
+                moveRow=moveIndexes/10
+                moveCol=moveIndexes%10
+                if self.turn%2==1 and self.fullBoard[moveRow][moveCol].team=='w' and self.fullBoard[moveRow][moveCol].val>self.fullBoard[currRow][currCol]: 
+                    whiteAdvantage+=self.fullBoard[moveIndexes/10][moveIndexes]%10-self.fullBoard[currRow][currCol]-50
+        if noMovesW==True and self.turn%2==1: #CheckMate
+            if self.inCheckStored==True: 
+                blackAdvantage=1000000
+                whiteAdvantage=-1000000
+                self.gameState+=1
+            else: 
+                self.advantage=0
+                self.gameState=1#staleMate
+        if noMovesB==True and self.turn%2==0: 
+            if self.inCheckStored==True: 
+                blackAdvantage=-1000000
+                whiteAdvantage=1000000
+                self.gameState+=1
+            else: 
+                blackAdvantage=0
+                whiteAdvantage=0
+                self.whitePoints=0
+                self.blackPoints=0
+                self.gameState=1
+        if self.AIteam=="w":
+            self.advantage=self.whitePoints-self.blackPoints+whiteAdvantage-blackAdvantage#white team for AI 
+        else:
+            self.advantage=self.blackPoints-self.whitePoints+blackAdvantage-whiteAdvantage#black team for AI 
+#
     def printInfo(self): #this is a function that I'll only use for debugging 
         self.printBoard()
         self.allMovesGen()
@@ -759,6 +784,8 @@ class board:
                 print("can move to:")
                 print(self.whiteaVailableMoves[self.whitePieces[i]][j])
                 #check to see if a move puts the player in check
+
+                
     def allMovesGen(self):#only call the move function after this is called.
         bKS=self.bHasMovedKing&self.bHasMovedR2==False and self.fullBoard[0][6]==piece(0,'n','n')and self.fullBoard[0][5]==piece(0,'n','n')
         bQS=self.bHasMovedKing&self.bHasMovedR1==False and self.fullBoard[0][1]==piece(0,'n','n')and self.fullBoard[0][2]==piece(0,'n','n') and self.fullBoard[0][3]==piece(0,'n','n')   
