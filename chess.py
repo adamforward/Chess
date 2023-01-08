@@ -6,15 +6,13 @@ import sys
 #I currently have all the functions I need to run a game with relatively little code, still have to debug though.  
 # #when I get the game up and running, I will probably make some modifications to the "AIAdvantageEval" function based on how it performs. 
 class piece:
-    def __init__(self, val:int, type:CHAR, team:CHAR): 
+    def __init__(self, val:int, kind:CHAR, team:CHAR): 
         self.val=val
-        self.type=type
+        self.kind=kind
         self.team=team
     def copy(self):
-        return piece(self.val, self.type, self.team)
+        return piece(self.val, self.kind, self.team)
 class board:
-    def __init_subclass__(self, cls):
-        self=cls
     def __init__(self):
         self.inCheckStored=False
         self.AIteam=""
@@ -76,7 +74,6 @@ class board:
         newB.wHasMovedKing=self.wHasMovedKing
         newB.wHasMovedR1=self.wHasMovedR1
         newB.wHasMovedR2=self.wHasMovedR2
-        newB.wHasSkipped=copy.deepcopy(self.wHasSkipped)
         newB.whiteaVailableMoves=copy.deepcopy(self.whiteaVailableMoves)
         newB.whiteIndexes=copy.deepcopy(self.whiteIndexes)
         newB.whiteIToP=copy.deepcopy(self.whiteIToP)
@@ -84,29 +81,26 @@ class board:
         newB.whitePoints=self.whitePoints
         return newB
 
-    def getPlayerMove(self): 
-        while self.AIteam!="w"|self.AIteam!="b":
-            print("w or b?")
-            self.AIteam=input()#Eventually, I will get the graphics going so that it will be 
         
     def generateAvailableMoves(self, row: int, col: int):#changing this function up, dividing it into different sections for pieces
-        if self.fullBoard[row][col].type=='p': #returns an integer, /10=row, %10=col
+        if self.fullBoard[row][col].kind=='p': #returns an integer, /10=row, %10=col
             if self.fullBoard[row][col].team=='w':#only pawns vary in the indexes they can move to 
                 return self.generatePawnMovesw(row, col)
             else: 
                 return self.generatePawnMovesb(row, col)
-        elif self.fullBoard[row][col].type=='k': 
+        elif self.fullBoard[row][col].kind=='k': 
             return self.knightMoves(row, col)
-        elif self.fullBoard[row][col].type=='r':
+        elif self.fullBoard[row][col].kind=='r':
             return self.rookMoves(row, col)
-        elif self.fullBoard[row][col].type=='b':
+        elif self.fullBoard[row][col].kind=='b':
             return self.bishopMoves(row, col)
-        elif self.fullBoard[row][col].type=='K': 
+        elif self.fullBoard[row][col].kind=='K': 
             return self.kingMoves(row, col)
-        elif self.fullBoard[row][col].type=='q':
+        elif self.fullBoard[row][col].kind=='q':
             re=self.rookMoves(row, col)
             re.append(self.bishopMoves(row,col))
-        else: 
+            return re
+        else: #gen available moves looks good 
             return None
 
     def generatePawnMovesw(self,row, col):#white starts at row 6
@@ -122,15 +116,15 @@ class board:
                 #pawns are labeled by strings p1, p2, p3,... 
                 #so ascii table(1)-ascii table(pawnstring[1]) gives you original column. 
                 #if pawn on square that you want to en pessant corresponds to it's original column, you can en pessant 
-                if self.fullBoard[3][1].team=='b' and self.fullBoard[3][1].type=='p': 
-                    if ord(self.blackIToP[31][1])-ord(1)==0: 
+                if self.fullBoard[3][1].team=='b' and self.fullBoard[3][1].kind=='p': 
+                    if ord(self.blackIToP[31][1])-ord('1')==0: 
                         re.append(31)
         elif col==7:#right edge
             if self.fullBoard[col-1][row-1].team=='b': 
                 re.append(10*(row-1)+col-1)
             if row==3: 
-                if self.fullBoard[3][6].team=='b' and self.fullBoard[3][6].type=='p': #en pessant, same idea but col index is 6
-                    if ord(self.blackIToP[36][1])-ord(6)==0: #if it's p6, this expression will be ord("6")-ord("6")
+                if self.fullBoard[3][6].team=='b' and self.fullBoard[3][6].kind=='p': #en pessant, same idea but col index is 6
+                    if ord(self.blackIToP[36][1])-ord('6')==0: #if it's p6, this expression will be ord("6")-ord("6")
                         re.append(36)
         else: #not on the edge
             if self.fullBoard[col-1][row-1].team=='b': 
@@ -138,11 +132,11 @@ class board:
             if self.fullBoard[col+1][row-1].team=='b': 
                 re.append(10*(row-1)+col+1)
             if row==3:
-                if self.fullBoard[3][col-1].team=='b' and self.fullBoard[3][col-1].type=='p': #en pessant, same idea but col index is 6
-                    if ord(self.blackIToP[30+col-1][1])-ord(1)==col-1:#if it's p8, the left hand side will =7
+                if self.fullBoard[3][col-1].team=='b' and self.fullBoard[3][col-1].kind=='p': #en pessant, same idea but col index is 6
+                    if ord(self.blackIToP[30+col-1][1])-ord('1')==col-1:#if it's p8, the left hand side will =7
                         re.append(30+col-1)#check right and left if it's not on the edge 
-                if self.fullBoard[3][col+1].team=='b' and self.fullBoard[3][col+1].type=='p': 
-                    if ord(self.blackIToP[30+col+1][1])-ord(1)==col+1:
+                if self.fullBoard[3][col+1].team=='b' and self.fullBoard[3][col+1].kind=='p': 
+                    if ord(self.blackIToP[30+col+1][1])-ord('1')==col+1:
                         re.append(30+col+1)
 
 
@@ -159,14 +153,14 @@ class board:
                 #pawns are labeled by strings p1, p2, p3,... 
                 #so ascii table(1)-ascii table(pawnstring[1]) gives you original column. 
                 #if pawn on square that you want to en pessant corresponds to it's original column, you can en pessant 
-                if self.fullBoard[5][1].team=='w' and self.fullBoard[5][1].type=='p': 
+                if self.fullBoard[5][1].team=='w' and self.fullBoard[5][1].kind=='p': 
                     if ord(self.whiteIToP[51][1])-ord(1)==0: 
                         re.append(51)
         elif col==7:#right edge
             if self.fullBoard[col-1][row+1].team=='w': 
                 re.append(10*(row+1)+col-1)
             if row==5: 
-                if self.fullBoard[5][6].team=='w' and self.fullBoard[5][6].type=='p': #en pessant, same idea but col index is 6
+                if self.fullBoard[5][6].team=='w' and self.fullBoard[5][6].kind=='p': #en pessant, same idea but col index is 6
                     if ord(self.blackIToP[56][1])-ord(6)==0: #if it's p6, this expression will be ord("6")-ord("6")
                         re.append(36)
         else: 
@@ -175,346 +169,88 @@ class board:
             if self.fullBoard[col+1][row+1].team=='w': 
                 re.append(10*(row-1)+col+1)
             if row==5:
-                if self.fullBoard[5][col-1].team=='w' and self.fullBoard[5][col-1].type=='p': #en pessant, same idea but col index is 6
+                if self.fullBoard[5][col-1].team=='w' and self.fullBoard[5][col-1].kind=='p': #en pessant, same idea but col index is 6
                     if ord(self.blackIToP[50+col-1][1])-ord(1)==col-1:#if it's p8, the left hand side will =7
                         re.append(50+col-1)#check right and left if it's not on the edge 
-                if self.fullBoard[5][col+1].team=='w' and self.fullBoard[5][col+1].type=='p': 
+                if self.fullBoard[5][col+1].team=='w' and self.fullBoard[5][col+1].kind=='p': 
                     if ord(self.blackIToP[50+col+1][1])-ord(1)==col+1:
                         re.append(50+col+1)
 
 
-    def knightMoves(self, row: int, col: int):#knight moves +3 and +1 in either direction
-        #need to implement boundary conditions 
+
+    def knightMoves(self, row:int, col:int): #debugged
         re=[]
-        knightMoves=([1,3],[-1,3],[1,-3])
         team=self.fullBoard[row][col].team
-        if row<1: #in the corner
-            if col<1:#can only add to row and col here  
-                if self.fullBoard[row+1][col+3].team!=team:
-                    re.append(10*(row+1)+col+3)
-                if self.fullBoard[row+3][col+1].team!=team:
-                    re.append(10*(row+3)+col+1)
-            elif col==1 or col==3: #can do col-1 here 
-                if self.fullBoard[row+1][col+3].team!=team:
-                    re.append(10*(row+1)+col+3)
-                if self.fullBoard[row+3][col+1].team!=team:
-                    re.append(10*(row+3)+col+1)
-                if self.fullBoard[row+3][col-1].team!=team:
-                    re.append(10*(row+3)+col-1)
-            elif col>6: #for boundary conditions
-                if self.fullBoard[row+1][col-3].team!=team:
-                    re.append(10*(row+1)+col-3)
-                if self.fullBoard[row+3][col-1].team!=team:#can only subtract from col 
-                    re.append(10*(row+3)+col-1)
-            elif col==6 or col==5: #can add 1, but not 3 to col
-                if self.fullBoard[row+1][col-3].team!=team:
-                    re.append(10*(row+1)+col-3)
-                if self.fullBoard[row+3][col+1].team!=team:
-                    re.append(10*(row+3)+col+1)
-                if self.fullBoard[row+3][col-1].team!=team:
-                    re.append(10*(row+3)+col-1)
-            else: #if it's in the middle of the board, col can be + or - 1 or 3
-                if self.fullBoard[row+1][col+3].team!=team:
-                    re.append(10*(row+1)+col+3)
-                if self.fullBoard[row+3][col+1].team!=team:
-                    re.append(10*(row+3)+col+1)
-                if self.fullBoard[row+1][col-3].team!=team:
-                    re.append(10*(row+1)+col-3)
-                if self.fullBoard[row+3][col-1].team!=team:#can only subtract from col 
-                    re.append(10*(row+3)+col-1)
-        elif row==1 or row==3: 
-            if col<1:#same as above, but you can subtract one from row now.   
-                if self.fullBoard[row-1][col+3].team!=team:
-                    re.append(10*(row-1)+col+3)
-                if self.fullBoard[row+1][col+3].team!=team:
-                    re.append(10*(row+1)+col+3)
-                if self.fullBoard[row+3][col+1].team!=team:
-                    re.append(10*(row+3)+col+1)
-            elif col==1 or col==2: #can do col-1 here 
-                if self.fullBoard[row-1][col+3].team!=team:
-                    re.append(10*(row-1)+col+3)
-                if self.fullBoard[row+1][col+3].team!=team:
-                    re.append(10*(row+1)+col+3)
-                if self.fullBoard[row+3][col+1].team!=team:
-                    re.append(10*(row+3)+col+1)
-                if self.fullBoard[row+3][col-1].team!=team:
-                    re.append(10*(row+3)+col-1)
-            elif col>6: #for boundary conditions
-                if self.fullBoard[row-1][col-3].team!=team:
-                    re.append(10*(row-1)+col-3)
-                if self.fullBoard[row+1][col-3].team!=team:
-                    re.append(10*(row+1)+col-3)
-                if self.fullBoard[row+3][col-1].team!=team:#can only subtract from col 
-                    re.append(10*(row+3)+col-1)
-            elif col==6 or col==5: #can add 1, but not 3 to col
-                if self.fullBoard[row-1][col-3].team!=team:
-                    re.append(10*(row-1)+col-3)
-                if self.fullBoard[row+1][col-3].team!=team:
-                    re.append(10*(row+1)+col-3)
-                if self.fullBoard[row+3][col+1].team!=team:
-                    re.append(10*(row+3)+col+1)
-                if self.fullBoard[row+3][col-1].team!=team:
-                    re.append(10*(row+3)+col-1)
-            else: #if it's in the middle of the board, col can be + or - 1 or 3
-                if self.fullBoard[row-1][col-3].team!=team:
-                    re.append(10*(row-1)+col-3)#can subtract and add 
-                if self.fullBoard[row-1][col+3].team!=team:
-                    re.append(10*(row-1)+col+3)
-                if self.fullBoard[row+1][col+3].team!=team:
-                    re.append(10*(row+1)+col+3)
-                if self.fullBoard[row+1][col-3].team!=team:
-                    re.append(10*(row+1)+col-3)
-                if self.fullBoard[row+3][col-1].team!=team:#can only subtract from col 
-                    re.append(10*(row+3)+col-1)
-                if self.fullBoard[row+3][col-1].team!=team:
-                    re.append(10*(row+3)+col-1)
-        elif row>6:#can only subtract one from row 
-            if col<1:#can only add to row and col here  
-                if self.fullBoard[row-1][col+3].team!=team:
-                    re.append(10*(row-1)+col+3)
-                if self.fullBoard[row-3][col+1].team!=team:
-                    re.append(10*(row-3)+col+1)
-            elif col>=1 and col<3: #can do col-1 here 
-                if self.fullBoard[row-1][col+3].team!=team:
-                    re.append(10*(row-1)+col+3)
-                if self.fullBoard[row-3][col+1].team!=team:
-                    re.append(10*(row-3)+col+1)
-                if self.fullBoard[row-3][col-1].team!=team:
-                    re.append(10*(row-3)+col-1)
-            elif col>6: #for boundary conditions
-                if self.fullBoard[row-1][col-3].team!=team:
-                    re.append(10*(row-1)+col-3)
-                if self.fullBoard[row-3][col-1].team!=team:#can only subtract from col 
-                    re.append(10*(row-3)+col-1)
-            elif col==6 or col==5: #can add 1, but not 3 to col
-                if self.fullBoard[row-1][col-3].team!=team:
-                    re.append(10*(row-1)+col-3)
-                if self.fullBoard[row-3][col+1].team!=team:
-                    re.append(10*(row-3)+col+1)
-                if self.fullBoard[row-3][col-1].team!=team:
-                    re.append(10*(row-3)+col-1)
-            else: #if it's in the middle of the board, col can be + or - 1 or 3
-                if self.fullBoard[row-1][col+3].team!=team:
-                    re.append(10*(row-1)+col+3)
-                if self.fullBoard[row-3][col+1].team!=team:
-                    re.append(10*(row-3)+col+1)
-                if self.fullBoard[row-1][col-3].team!=team:
-                    re.append(10*(row-1)+col-3)
-                if self.fullBoard[row-3][col-1].team!=team:#can only subtract from col 
-                    re.append(10*(row-3)+col-1)
-                if self.fullBoard[row-3][col-1].team!=team:
-                    re.append(10*(row-3)+col-1)
-        elif row==6 or row==5:#can subtract from row or add 1
-            if col<1:#can only add to row and col here  
-                if self.fullBoard[row-1][col+3].team!=team:
-                    re.append(10*(row-1)+col+3)
-                if self.fullBoard[row-3][col+1].team!=team:
-                    re.append(10*(row-3)+col+1)
-                if self.fullBoard[row+1][col+3].team!=team:
-                    re.append(10*(row+1)+col+3)
-            elif col>=1 and col<3: #can do col-1 here 
-                if self.fullBoard[row-1][col+3].team!=team:
-                    re.append(10*(row-1)+col+3)
-                if self.fullBoard[row-3][col+1].team!=team:
-                    re.append(10*(row-3)+col+1)
-                if self.fullBoard[row-3][col-1].team!=team:
-                    re.append(10*(row-3)+col-1)
-                if self.fullBoard[row+1][col+3].team!=team:
-                    re.append(10*(row+1)+col+3)
-            elif col>6: #for boundary conditions
-                if self.fullBoard[row-1][col-3].team!=team:
-                    re.append(10*(row-1)+col-3)
-                if self.fullBoard[row-3][col-1].team!=team:#can only subtract from col 
-                    re.append(10*(row-3)+col-1)
-                if self.fullBoard[row-3][col-1].team!=team:
-                    re.append(10*(row-3)+col-1)
-                if self.fullBoard[row+1][col-3].team!=team:
-                    re.append(10*(row+1)+col-3)
-            elif col==6 or col==5: #can add 1, but not 3 to col
-                if self.fullBoard[row-1][col-3].team!=team:
-                    re.append(10*(row-1)+col-3)
-                if self.fullBoard[row-3][col+1].team!=team:
-                    re.append(10*(row-3)+col+1)
-                if self.fullBoard[row-3][col-1].team!=team:
-                    re.append(10*(row-3)+col-1)
-                if self.fullBoard[row+1][col-3].team!=team:
-                    re.append(10*(row+1)+col-3)
-            else: #if it's in the middle of the board, col can be + or - 1 or 3
-                if self.fullBoard[row-1][col+3].team!=team:
-                    re.append(10*(row-1)+col+3)
-                if self.fullBoard[row-3][col+1].team!=team:
-                    re.append(10*(row-3)+col+1)
-                if self.fullBoard[row-1][col-3].team!=team:
-                    re.append(10*(row-1)+col-3)
-                if self.fullBoard[row-3][col-1].team!=team:
-                    re.append(10*(row-3)+col-1)
-                if self.fullBoard[row+1][col-3].team!=team:
-                    re.append(10*(row+1)+col-3)
-                if self.fullBoard[row+1][col+3].team!=team:
-                    re.append(10*(row+1)+col+3)
-        else:#can add and subtract 1 or 3 from row 
-            if col<1:#can only add to row and col here  
-                if self.fullBoard[row-1][col+3].team!=team:
-                    re.append(10*(row-1)+col+3)
-                if self.fullBoard[row-3][col+1].team!=team:
-                    re.append(10*(row-3)+col+1)
-                if self.fullBoard[row+1][col+3].team!=team:
-                    re.append(10*(row+1)+col+3)
-                if self.fullBoard[row+3][col+1].team!=team:
-                    re.append(10*(row+3)+col+1)
-            elif col>=1 and col<3: #can do col-1 here 
-                if self.fullBoard[row-1][col+3].team!=team:
-                    re.append(10*(row-1)+col+3)
-                if self.fullBoard[row-3][col+1].team!=team:
-                    re.append(10*(row-3)+col+1)
-                if self.fullBoard[row-3][col-1].team!=team:
-                    re.append(10*(row-3)+col-1)
-                if self.fullBoard[row+1][col+3].team!=team:
-                    re.append(10*(row+1)+col+3)
-            elif col>6: #for boundary conditions
-                if self.fullBoard[row-1][col-3].team!=team:
-                    re.append(10*(row-1)+col-3)
-                if self.fullBoard[row-3][col-1].team!=team:#can only subtract from col 
-                    re.append(10*(row-3)+col-1)
-                if self.fullBoard[row-3][col-1].team!=team:
-                    re.append(10*(row-3)+col-1)
-                if self.fullBoard[row+1][col-3].team!=team:
-                    re.append(10*(row+1)+col-3)
-            elif col==6 or col==5: #can add 1, but not 3 to col
-                if self.fullBoard[row-1][col-3].team!=team:
-                    re.append(10*(row-1)+col-3)
-                if self.fullBoard[row-3][col+1].team!=team:
-                    re.append(10*(row-3)+col+1)
-                if self.fullBoard[row-3][col-1].team!=team:
-                    re.append(10*(row-3)+col-1)
-                if self.fullBoard[row+3][col+1].team!=team:
-                    re.append(10*(row+3)+col+1)
-                if self.fullBoard[row+1][col-3].team!=team: 
-                    re.append(10*(row+1)+col-3)
-                if self.fullBoard[row+3][col-1].team!=team:
-                    re.append(10*(row+3)+col-1)
-            else: #if it's in the middle of the board, col can be + or - 1 or 3
-                if self.fullBoard[row-1][col+3].team!=team:
-                    re.append(10*(row-1)+col+3)
-                if self.fullBoard[row-3][col+1].team!=team:
-                    re.append(10*(row-3)+col+1)
-                if self.fullBoard[row-1][col-3].team!=team:
-                    re.append(10*(row-1)+col-3)
-                if self.fullBoard[row-3][col-1].team!=team:#can only subtract from col 
-                    re.append(10*(row-3)+col-1)
-                if self.fullBoard[row+1][col+3].team!=team:
-                    re.append(10*(row+1)+col+3)
-                if self.fullBoard[row+3][col+1].team!=team:
-                    re.append(10*(row+3)+col+1)
-                if self.fullBoard[row+1][col-3].team!=team:
-                    re.append(10*(row+1)+col-3)
-                if self.fullBoard[row+3][col-1].team!=team:#can only subtract from col 
-                    re.append(10*(row+3)+col-1)
-                if self.fullBoard[row+3][col-1].team!=team:
-                    re.append(10*(row+3)+col-1)
+        for i in (1,-1): 
+            moveRow=row+i
+            for j in (3,-3): 
+                moveCol=col+j
+                if 0<=moveRow<=7 and 0<=col<=7 and self.fullBoard[moveRow][moveCol].team!=team:
+                    re.append(moveRow*10+moveCol)
+                if 0<=moveRow<=7 and 0<=col<=7 and self.fullBoard[moveRow][moveCol].team!=team:
+                    re.append(moveRow*10+moveCol)
+        for i in (1,-1): 
+            moveCol=col+i
+            for j in (3,-3): 
+                moveRow=row+j
+                if 0<=moveRow<=7 and 0<=col<=7 and self.fullBoard[moveRow][moveCol].team!=team:
+                    re.append(moveRow*10+moveCol)
+                if 0<=moveRow<=7 and 0<=col<=7 and self.fullBoard[moveRow][moveCol].team!=team:
+                    re.append(moveRow*10+moveCol)
         return re
+                
 
-
-    def bishopMoves(self, row:int, col:int):
-        team=self.fullBoard[row][col]
+    def bishopMoves(self,row:int, col:int):#debugged
         re=[]
-        temprow=row
-        tempcol=col#can move diagonally in 4 directions
-        temprow+=1
-        tempcol+=1
-        while self.fullBoard[temprow][tempcol].team!=team and temprow<=7 and tempcol<=7: 
-            re.append(temprow*10+tempcol)
-            temprow+=1
-            tempcol+=1
-            if self.fullBoard[temprow][tempcol].team!='n': 
-                break
-        temprow=row
-        tempcol=col#can move diagonally in 4 directions
-        temprow-=1
-        tempcol+=1
-        while self.fullBoard[temprow][tempcol].team!=team and temprow>=0 and tempcol<=7: 
-            re.append(temprow*10+tempcol)
-            temprow-=1
-            tempcol+=1
-            if self.fullBoard[temprow][tempcol].team!='n': 
-                break
-        temprow=row
-        tempcol=col#can move diagonally in 4 directions
-        temprow-=1
-        tempcol-=1
-        while self.fullBoard[temprow][tempcol].team!=team and temprow>=0 and tempcol>=0: 
-            re.append(temprow*10+tempcol)
-            temprow-=1
-            tempcol-=1
-            if self.fullBoard[temprow][tempcol].team!='n': #if it's the oppossite team
-                break
-        temprow=row
-        tempcol=col#can move diagonally in 4 directions
-        temprow+=1
-        tempcol-=1
-        while self.fullBoard[temprow][tempcol].team!=team and temprow<=7 and tempcol>=0: 
-            re.append(temprow*10+tempcol)
-            temprow+=1
-            tempcol-=1
-            if self.fullBoard[temprow][tempcol].team!='n': #if it's the oppossite team
-                break
+        team=self.fullBoard[row][col]
+        for i in (1,-1): 
+            moveRow=i
+            for j in (1,-1): 
+                moveCol=j
+                while 0<= moveRow <=7 and self.fullBoard[moveRow][moveCol].team!=team:
+                    re.append(moveRow*10+moveCol)
+                    if self.fullBoard[moveRow][moveCol].team!=team:
+                        break
         return re
+        
 
 
     def rookMoves(self, row:int, col:int): #same idea as bishop, but only one changes at a time.
-        re=[]
-        team=self.fullBoard[row][col]
-        temprow=row
-        temprow+=1
-        while self.fullBoard[temprow][col].team!=team and temprow<=7: 
-            re.append(temprow*10+col)
-            temprow+=1
-            if self.fullBoard[temprow][col].team!='n':
-                break
-        temprow=row
-        temprow-=1
-        while self.fullBoard[temprow][col].team!=team and temprow>=0: 
-            re.append(temprow*10+col)
-            temprow+=1
-            if self.fullBoard[temprow][col].team!='n':
-                break
-        tempcol=col
-        tempcol+=1
-        while self.fullBoard[row][tempcol].team!=team and tempcol<=7: 
-            re.append(row*10+tempcol)
-            tempcol+=1
-            if self.fullBoard[row][tempcol].team!='n':
-                break
-        tempcol=col
-        tempcol-=1
-        while self.fullBoard[row][tempcol].team!=team and tempcol>=0: 
-            re.append(row*10+tempcol)
-            tempcol-=1
-            if self.fullBoard[row][tempcol].team!='n':
-                break
+        re = []
+        team = self.fullBoard[row][col].team #debugged
+        for i in (1, -1):
+            moveRow = row + i
+            while 0 <= moveRow <= 7 and self.fullBoard[moveRow][col].team != team:
+                re.append(moveRow * 10 + col)
+                if self.fullBoard[moveRow][col].team != "n":
+                    break
+                moveRow += i
+            moveCol = col + i
+            while 0 <= moveCol <= 7 and self.fullBoard[row][moveCol].team != team:
+                re.append(row * 10 + moveCol)
+                if self.fullBoard[row][moveCol].team != "n":
+                    break
+                moveCol += i
         return re
 
 
-    def kingMoves(self,row:int,col:int): 
+    def kingMoves(self,row:int,col:int): #debugged 
         team=self.fullBoard[row][col].team
         re=[]
-        if self.fullBoard[row+1][col].team!=team and row+1<=7:
-            re.append(10*(row+1)+col)
-        if self.fullBoard[row+1][col+1].team!=team and row+1<=7 and col+1<=7:
-            re.append(10*(row+1)+col+1)
-        if self.fullBoard[row][col+1].team!=team and col+1<=7:
-            re.append(10*row+col+1)
-        if self.fullBoard[row][col-1].team!=team and col-1>=0:
-            re.append(10*row+col-1)
-        if self.fullBoard[row-1][col-1].team!=team and col-1>=0 and row-1>=0:
-            re.append(10*row-1+col-1)
-        if self.fullBoard[row-1][col].team!=team and row-1>=0:
-            re.append(10*row-1+col)
-        if self.fullBoard[row-1][col+1].team!=team and row-1>=0 and col+1<=7:
-            re.append(10*row-1+col+1)
-        if self.fullBoard[row+1][col-1].team!=team and row+1<=7 and col-1>=0:
-            re.append(10*(row+1)+col-1)
+        for i in (1,-1): 
+            moveRow=row+i
+            if 0<=moveRow<=7 and self.fullBoard[moveRow][col].team!=team:
+                re.append(moveRow*10+moveCol)
+            if 0<=moveCol+i and self.fullBoard[row][moveCol+i].team!=team: 
+                re.append(row*10+col)
+            for j in (1,-1): 
+                moveCol=col+j
+                if 0<=moveRow<=7 and 0<=col<=7 and self.fullBoard[moveRow][moveCol].team!=team:
+                    re.append(moveRow*10+moveCol)
+                if 0<=moveRow<=7 and 0<=col<=7 and self.fullBoard[moveRow][moveCol].team!=team:
+                    re.append(moveRow*10+moveCol)
         return re
+                
 
 
     def AIAdvantageEval(self):#only call this function after all moves have been generated and checked. going to search through a tree of ints for advantage parameter. 
@@ -598,7 +334,7 @@ class board:
             currCol=currIndex%10
             if currIndex==33 or currIndex==34 or currIndex==44 or currIndex==43:#favor moves from the middle heavier in midgame
                 blackAdvantage+=3*len(self.blackAvailableMoves[self.blackPieces[i]])
-            if self.fullBoard[currRow][currCol].type=='p':
+            if self.fullBoard[currRow][currCol].kind=='p':
                 if currRow==5: 
                     blackAdvantage+=50 
                 if currRow==6: 
@@ -626,7 +362,7 @@ class board:
             currCol=currIndex%10
             if currIndex==33 or currIndex==34 or currIndex==44 or currIndex==43:#favor moves from the middle heavier in midgame
                 whiteAdvantage+=3*len(self.whiteaVailableMoves[self.whitePieces[i]])
-            if self.fullBoard[currRow][currCol].type=='p':
+            if self.fullBoard[currRow][currCol].kind=='p':
                 if currRow==2: 
                     whiteAdvantage+=50
                 if currRow==1: 
@@ -728,7 +464,7 @@ class board:
             currIndexes=self.blackIndexes[self.blackPieces[i]]
             currRow=currIndexes/10
             currCol=currIndexes%10
-            if self.fullBoard[currRow][currCol].type=='p': 
+            if self.fullBoard[currRow][currCol].kind=='p': 
                 if currRow>4: 
                     blackAdvantage+=currRow*30#this way, higher rows get more points for pawns
             if len(self.blackAvailableMoves[self.blackPieces[i]])!=0:
@@ -744,7 +480,7 @@ class board:
             currIndexes=self.whiteIndexes[self.whitePieces[i]]
             currRow=currIndexes/10
             currCol=currIndexes%10
-            if self.fullBoard[currRow][currCol].type=='p': 
+            if self.fullBoard[currRow][currCol].kind=='p': 
                 if currRow<3: 
                     whiteAdvantage+=(7-currRow)*30
             if len(self.whiteaVailableMoves[self.blackPieces[i]])!=0:
@@ -779,22 +515,6 @@ class board:
             self.advantage=self.whitePoints-self.blackPoints+whiteAdvantage-blackAdvantage#white team for AI 
         else:
             self.advantage=self.blackPoints-self.whitePoints+blackAdvantage-whiteAdvantage#black team for AI 
-#
-    def printInfo(self): #this is a function that I'll only use for debugging 
-        self.printBoard()
-        self.allMovesGen()
-        print("White:")
-        for i in range(self.whitePieces): 
-            print(self.whitePieces[i])
-            print("is located at:")
-            print(self.whiteIndexes[i])
-            print("index to piece test:")
-            indexes=self.whiteIndexes[0]*10+self.whiteIndexes[1]
-            print(self.whiteIToP[indexes])
-            for j in range(self.whiteaVailableMoves[i]):
-                print("can move to:")
-                print(self.whiteaVailableMoves[self.whitePieces[i]][j])
-                #check to see if a move puts the player in check
 
 
     def allMovesGen(self):#only call the move function after this is called.
@@ -819,22 +539,23 @@ class board:
             currRow=self.whiteIndexes[self.whitePieces[i]]/10
             currCol=self.whiteIndexes[self.whitePieces[i]]%10
             allMoves=self.generateAvailableMoves(currRow,currCol)#array of places you can move to 
-            if self.whitePieces[i]=="q" or self.whitePieces[i]=="r" or self.whitePieces[i]=="b": 
-                for j in range(len(allMoves)): 
-                    moveIndexes=allMoves[j]
-                    moveRow=moveIndexes/10
-                    moveCol=moveIndexes%10
-                    if self.fullBoard[moveRow][moveCol].team=='b':
-                        restore=self.fullBoard[moveRow][moveCol].copy()
-                        self.fullBoard[moveRow][moveCol]=piece(0,'n','n')
-                        if self.blackIndexes["K"] in self.generateAvailableMoves(currRow,currCol):
-                            bpinned[self.whitePieces[i]]=self.blackIToP[moveIndexes]#check conditions for if a piece is pinned
-                            wpinning.append(self.whitePieces[i])
-                        self.fullBoard[moveRow][moveCol]=restore#run a helper method at the end
-            self.whiteaVailableMoves[self.whitePieces[i]]=allMoves
-            if self.blackIndexes["K"] in allMoves:#in check condition
-                self.inCheckStored=True
-                whiteChecking.append(self.whitePieces[i])
+            if self.turn%2==1:#pinned condition only matters if it's black's turn 
+                if self.whitePieces[i][0]=="q" or self.whitePieces[i]=="r" or self.whitePieces[i]=="b": 
+                    for j in range(len(allMoves)): 
+                        moveIndexes=allMoves[j]
+                        moveRow=moveIndexes/10
+                        moveCol=moveIndexes%10
+                        if self.fullBoard[moveRow][moveCol].team=='b':
+                            restore=self.fullBoard[moveRow][moveCol].copy()
+                            self.fullBoard[moveRow][moveCol]=piece(0,'n','n')
+                            if self.blackIndexes["K"] in self.generateAvailableMoves(currRow,currCol):
+                                bpinned[self.whitePieces[i]]=self.blackIToP[moveIndexes]#check conditions for if a piece is pinned
+                                wpinning.append(self.whitePieces[i])
+                            self.fullBoard[moveRow][moveCol]=restore#run a helper method at the end
+                self.whiteaVailableMoves[self.whitePieces[i]]=allMoves
+                if self.blackIndexes["K"] in allMoves:#in check condition
+                    self.inCheckStored=True #only look to see if black's in check if it's blacks turn, cannot move into check 
+                    whiteChecking.append(self.whitePieces[i])
             for j in bKingMoves:
                 if bKingMoves[j] in allMoves:
                     bKingMoves.pop(j)
@@ -853,22 +574,23 @@ class board:
             currRow=self.blackIndexes[self.blackPieces[i]]/10
             currCol=self.blackIndexes[self.blackPieces[i]]%10
             allMoves=self.generateAvailableMoves(self.blackIndexes[self.blackPieces[i]]/10,self.blackIndexes[self.blackPieces[i]]%10)
-            if self.blackPieces[i]=="q" or self.blackPieces[i]=="r" or self.blackPieces[i]=="b": 
-                for j in allMoves: 
-                    moveIndexes=allMoves[j]
-                    moveRow=moveIndexes/10
-                    moveCol=moveIndexes%10
-                    if self.fullBoard[moveRow][moveCol].team=='w':
-                        restore=self.fullBoard[moveRow][moveCol].copy()
-                        self.fullBoard[moveRow][moveCol]=piece(0,'n','n')
-                        if self.whiteIndexes["K"] in self.generateAvailableMoves(self.blackIndexes[self.blackPieces[i]]/10,self.blackIndexes[self.blackPieces[i]]%10):
-                            wpinned[self.blackPieces[i]]=restore
-                            bpinning.append(self.blackIToP[moveIndexes])
-                        self.fullBoard[moveRow][moveCol]=restore#run a helper method at the end
-                self.blackAvailableMoves[self.blackPieces[i]]=allMoves
-            if self.whiteIndexes["K"] in allMoves:#in check condition
-                self.inCheckStored=True
-                blackChecking.append(self.blackPieces[i])
+            if self.turn%2==0:
+                if self.blackPieces[i][0]=="q" or self.blackPieces[i]=="r" or self.blackPieces[i]=="b": 
+                    for j in allMoves: 
+                        moveIndexes=allMoves[j]
+                        moveRow=moveIndexes/10
+                        moveCol=moveIndexes%10
+                        if self.fullBoard[moveRow][moveCol].team=='w':
+                            restore=self.fullBoard[moveRow][moveCol].copy()
+                            self.fullBoard[moveRow][moveCol]=piece(0,'n','n')
+                            if self.whiteIndexes["K"] in self.generateAvailableMoves(self.blackIndexes[self.blackPieces[i]]/10,self.blackIndexes[self.blackPieces[i]]%10):
+                                wpinned[self.blackPieces[i]]=restore
+                                bpinning.append(self.blackIToP[moveIndexes])
+                            self.fullBoard[moveRow][moveCol]=restore#run a helper method at the end
+                    self.blackAvailableMoves[self.blackPieces[i]]=allMoves
+                if self.whiteIndexes["K"] in allMoves:#in check condition
+                    self.inCheckStored=True
+                    blackChecking.append(self.blackPieces[i])
             for j in wKingMoves:
                 if wKingMoves[j] in allMoves:
                     bKingMoves.pop(j)
@@ -946,7 +668,7 @@ class board:
             for i in goodMoves:
                 if goodMoves[i] in self.blackAvailableMoves[pinned]:
                    overlap.append(goodMoves[i])
-            self.blackAvailableMoves[pinned]=goodMoves
+            self.blackAvailableMoves[pinned]=overlap
 
 
         else: #if black is pinning white
@@ -979,7 +701,7 @@ class board:
             for i in goodMoves:
                 if goodMoves[i] in self.whiteaVailableMoves[pinned]:
                    overlap.append(goodMoves[i])
-            self.whiteaVailableMoves[pinned]=goodMoves
+            self.whiteaVailableMoves[pinned]=overlap
 
 
     def inCheck1(self,pressuring:str, team:str): #if king is in check from knight or pawn
@@ -1040,102 +762,190 @@ class board:
                 if self.blackPieces[i]=="K": 
                     continue#condition already checked. 
                 else:
-                    for j in self.blackAvailableMoves[self.whitePieces[i]]:
-                        if self.blackAvailableMoves[self.whitePieces[i]][j] in goodMoves: 
-                            overLap.append(self.blackAvailableMoves[self.whitePieces[i]][j])#gets rid of all the moves that do not block the check.
+                    for j in self.blackAvailableMoves[self.blackPieces[i]]:
+                        if self.blackAvailableMoves[self.blackPieces[i]][j] in goodMoves: 
+                            overLap.append(self.blackAvailableMoves[self.blackPieces[i]][j])#gets rid of all the moves that do not block the check.
                     self.blackAvailableMoves[self.blackPieces[i]]=overLap
 
+                    
+        else: 
+            goodMoves.append(self.blackIndexes[pressuring])#you can take the piece that's pressuring the king and you can move the pieces in the same line between the long range piece and king. 
+            if direction[0]>0 and direction[1]>0: 
+                for i in range(1,abs(self.whiteIndexes["K"]/10-self.blackIndexes[pressuring]/10)): #positively increasing diagonal, do not include 0 because a move does not include itself 
+                    goodMoves.append((self.whiteIndexes["K"]+11*i))
+            elif direction[0]==0 and direction[1]>0: 
+                for i in range(1,abs(self.whiteIndexes["K"]%10-self.blackIndexes[pressuring]%10)): #positively increasing horizontal 
+                    goodMoves.append((self.whiteIndexes["K"]+i))
+            elif direction[0]>0 and direction[1]==0: 
+                for i in range(1,abs(self.whiteIndexes["K"]/10-self.blackIndexes[pressuring]/10)): #positively increasing vertical 
+                    goodMoves.append((self.whiteIndexes["K"]+10*i))
+            elif direction[0]==0 and direction[1]<0: 
+                for i in range(1,abs(self.whiteIndexes["K"]%10-self.blackIndexes[pressuring]%10)):  
+                    goodMoves.append((self.whiteIndexes["K"]-i))
+            elif direction[0]<0 and direction[1]<0: 
+                for i in range(1,abs(self.whiteIndexes["K"]/10-self.blackIndexes[pressuring]/10)):  
+                    goodMoves.append((self.whiteIndexes["K"]-11*i))
+            elif direction[0]>0&direction[1]<0: 
+                for i in range(1,abs(self.whiteIndexes["K"]/10-self.blackIndexes[pressuring]/10)):  
+                    goodMoves.append((self.whiteIndexes["K"]+9*i))
+            elif direction[0]<0 and direction[1]>0: 
+                for i in range(1,abs(self.whiteIndexes["K"]/10-self.blackIndexes[pressuring]/10)):  
+                    goodMoves.append((self.whiteIndexes["K"]-9))
+            else: 
+                for i in range(1,abs(self.whiteIndexes["K"]/10-self.blackIndexes[pressuring]/10)):  
+                    goodMoves.append((self.whiteIndexes["K"]-10))
+            for i in self.whitePieces: 
+                overLap=[]
+                if self.Pieces[i]=="K": 
+                    continue#condition already checked. 
+                else:
+                    for j in self.whiteaVailableMoves[self.whitePieces[i]]:
+                        if self.whiteaVailableMoves[self.whitePieces[i]][j] in goodMoves: 
+                            overLap.append(self.whiteaVailableMoves[self.whitePieces[i]][j])#gets rid of all the moves that do not block the check.
+                    self.whiteaVailableMoves[self.whitePieces[i]]=overLap
+
+
     def move(self, index:int, availableMoveNum:int):#this will only be called after the gen all moves, so you dont have to run it twice 
-        if self.turn%2==0: #if it's white's turn. 
+        if self.turn%2==0: #if it's white's turn.
+            if self.whitePieces[i]=="K":
+                self.wHasMovedKing=True
+            if self.whitePieces[i]=="r1":
+                self.wHasMovedR1=True
+            if self.whitePieces[i]=="r2":
+                self.wHasMovedR2=True
             initialCoords=self.whiteIndexes[self.whitePieces[index]]
-            newIndexes=self.whiteaVailableMoves[self.whitePieces[index]]
-            if newIndexes==[9,9]: #king side castle
+            newIndexes=self.whiteaVailableMoves[self.whitePieces[index]][availableMoveNum]
+            oldRow=initialCoords/10
+            oldCol=initialCoords%10
+            newRow=initialCoords/10
+            newCol=initialCoords%10
+            if newIndexes==99: #king side castle
                 self.fullBoard[7][4]=piece(0,'n','n')
                 self.fullBoard[7][7]=piece(0,'n','n')
                 self.fullBoard[7][6]=piece(0,'K','w')
                 self.fullBoard[7][5]=piece(500, 'r', 'w')
+                self.whiteIndexes["K"]=76
+                self.whiteIndexes["r2"]=75
+                self.whiteIToP[76]="K"
+                self.whiteIToP[75]="r2"
+                self.turn+=1
                 return 
-            if newIndexes==[10,10]: #QSCastle
+            if newIndexes==100: #QSCastle
                 self.fullBoard[7][4]=piece(0,'n','n')
                 self.fullBoard[7][3]=piece(500,'r','w')
                 self.fullBoard[7][2]=piece(0,'K', 'w')
                 self.fullBoard[7][0]=piece(0,'n','n')
                 self.fullBoard[7][1]=piece(0,'n','n')
+                self.whiteIndexes["K"]=72
+                self.whiteIndexes["r1"]=73
+                self.whiteIToP[72]="K"
+                self.whiteIToP[73]="r2"
+                self.turn+=1
                 return 
-            wOldPiece=self.whitePieces[index]
-            oldpoints=self.fullBoard[newIndexes[0]][newIndexes[1]].val
-            boldPiece=""
-            if oldpoints>0:
-                boldPiece=self.blackIToP[newIndexes[0]*10+newIndexes[1]]
+            oldpoints=self.fullBoard[newRow][newCol].val#old piece refers to the one that's being captured. 
+            if oldpoints>0:#if a black piece is captured 
+                boldPiece=self.blackIToP[newIndexes]
                 self.blackIndexes.pop([boldPiece])
                 self.blackPieces.remove(boldPiece)
-                self.blackIToP.pop(newIndexes[0]*10+newIndexes[1]%10)
+                self.blackIToP.pop(newIndexes)
                 self.blackPoints-=oldpoints
-            self.fullBoard[newIndexes[0]][newIndexes[1]]=piece.copy(self.fullBoard[initialCoords[0]][initialCoords[1]])
-            if self.fullBoard[newIndexes[0]][newIndexes[1]].type=='p'&newIndexes[0]==0:#pawn to queen
-                self.fullBoard[newIndexes[0]][newIndexes[1]]=piece(900,'q','w')
-                self.whitePoints+=8
+            if self.fullBoard[newRow][newCol].kind=='p' and newIndexes/10==0:#pawn to queen
+                self.fullBoard[newRow][newCol]=piece(900,'q','w')
+                self.whitePoints+=800
+                for i in range(2,8): 
+                    queen="q"
+                    newName=queen.join(str(i))
+                    if newName in self.whitePieces: #if there are multiple queens 
+                        continue 
+                    else:
+                        self.whitePieces.append(newName)
+                        self.whiteIndexes[newName]=newIndexes
+                        self.whiteIToP[newIndexes]=newName
+                        break
+                self.whitePieces.pop(index)
+                self.whiteIndexes.pop(self.whitePieces[index])
+                self.whiteIToP.pop(initialCoords)
+                self.turn+=1
+                self.fullBoard[oldRow][oldCol]=piece(0,'n','n')#need to return here, because in this special situation, index map updating is completely different. 
+                return
+            self.fullBoard[newRow][newCol]=piece.copy(self.fullBoard[oldRow][oldCol])
             self.whiteIndexes[self.whitePieces[index]]=newIndexes
-            self.whiteIToP[newIndexes[0]*10+newIndexes[1]]=self.whitePieces[index]#have to reset all fields to reflect information on the new board. 
+            self.whiteIToP[newIndexes]=self.whitePieces[index]#have to reset all fields to reflect information on the new board. 
             self.fullBoard[initialCoords[0]][initialCoords[1]]=piece(0,'n','n')
-            if wOldPiece[0]=='p'&initialCoords[0]==6:
-                self.wHasSkipped[ord(wOldPiece[1])-ord('0')]==True#come back and make black reflect white here. 
-        else: 
-            initialCoords=self.blackIndexes[self.blackPieces[index]]
-            newIndexes=self.blackAvailableMoves(self.blackPieces[index])[availableMoveNum]
-            oldpoints=self.fullBoard[newIndexes[0]][newIndexes[1]].val
-            oldPiece=""
-            if oldpoints>0:
-                oldPiece=self.whiteIToP[newIndexes[0]*10+newIndexes[1]]
-            self.fullBoard[newIndexes[0]][newIndexes[1]]=self.fullBoard[initialCoords[0]][initialCoords[1]]
-            if self.fullBoard[newIndexes[0]][newIndexes[1]].type=='p'&newIndexes[0]==0:#pawn to queen
-                self.fullBoard[newIndexes[0]][newIndexes[1]]=piece(9,'q','w')
-                self.blackPoints+=8
-            if initialCoords==[7][4]:
-                self.wHasMovedKing==True
-            if initialCoords==[7][0]:
-                self.wHasMovedR1==True
-            if initialCoords==[7][7]:
-                self.wHasMovedR1==True
-            if initialCoords==[0][4]:
-                self.bHasMovedKing==True
-            if initialCoords==[0][0]:
-                self.bHasMovedR1==True
-            if initialCoords==[0][7]:
-                self.bHasMovedR1==True
-            self.whitePoints-=oldpoints
             self.turn+=1
-            if oldpoints>0:
-                self.whitePieces.remove(oldPiece)
-                self.whiteIToP.pop(newIndexes[0]*10+newIndexes[1])
-            self.whiteIndexes.pop(oldPiece)
-            self.blackIndexes[self.whitePieces[index]]=newIndexes
-            self.blackIToP[newIndexes[0]*10+newIndexes[1]]=self.blackPieces[index]
-            self.fullBoard[newIndexes[0]][newIndexes[1]]=piece(0,'n','n')
-            if wOldPiece=="p1"&newIndexes[0]-initialCoords[0]==2: 
-                self.wHasSkipped[0]==True
-            if wOldPiece=="p2"&newIndexes[0]-initialCoords[0]==2: 
-                self.wHasSkipped[1]==True
-            if wOldPiece=="p3"&newIndexes[0]-initialCoords[0]==2: 
-                self.wHasSkipped[2]==True
-            if wOldPiece=="p4"&newIndexes[0]-initialCoords[0]==2: 
-                self.wHasSkipped[3]==True
-            if wOldPiece=="p5"&newIndexes[0]-initialCoords[0]==2: 
-                self.wHasSkipped[4]==True
-            if wOldPiece=="p6"&newIndexes[0]-initialCoords[0]==2: 
-                self.wHasSkipped[5]==True
-            if wOldPiece=="p7"&newIndexes[0]-initialCoords[0]==2: 
-                self.wHasSkipped[6]==True
-            if wOldPiece=="p8"&newIndexes[0]-initialCoords[0]==2: 
-                self.wHasSkipped[7]==True
-            for i in self.whitePieces:
-                self.whiteaVailableMoves[self.whitePieces[i]].clear()#reset the board
-        self.inCheckStored=False
 
+        else: #blacks turn 
+            if self.blackPieces[index]=="K":
+                self.bHasMovedKing=True
+            if self.blackPieces[index]=="r1":
+                self.bHasMovedR1=True
+            if self.blackPieces[index]=="r2":
+                self.bHasMovedR2=True
+            initialCoords=self.blackIndexes[self.blackPieces[index]]
+            newIndexes=self.blackAvailableMoves[self.blackPieces[index]][availableMoveNum]
+            oldRow=initialCoords/10
+            oldCol=initialCoords%10
+            newRow=initialCoords/10
+            newCol=initialCoords%10
+            if newIndexes==99: #king side castle
+                self.fullBoard[0][4]=piece(0,'n','n')
+                self.fullBoard[0][7]=piece(0,'n','n')
+                self.fullBoard[0][6]=piece(0,'K','b')
+                self.fullBoard[0][5]=piece(500, 'r', 'b')
+                self.blackIndexes["K"]=76
+                self.blackIndexes["r2"]=75
+                self.blackIToP[76]="K"
+                self.blackIToP[75]="r2"
+                self.turn+=1
+                return 
+            if newIndexes==100: #QSCastle
+                self.fullBoard[0][4]=piece(0,'n','n')
+                self.fullBoard[0][3]=piece(500,'r','b')
+                self.fullBoard[0][2]=piece(0,'K', 'b')
+                self.fullBoard[0][0]=piece(0,'n','n')
+                self.fullBoard[0][1]=piece(0,'n','n')
+                self.blackIndexes["K"]=2
+                self.blackIndexes["r1"]=3
+                self.blackIToP[2]="K"
+                self.blackIToP[3]="r2"
+                self.turn+=1
+                return 
+            oldpoints=self.fullBoard[newRow][newCol].val#old piece refers to the one that's being captured. 
+            if oldpoints>0:#if a black piece is captured 
+                woldPiece=self.whiteIToP[newIndexes]
+                self.whiteIndexes.pop([woldPiece])
+                self.whitePieces.remove(woldPiece)
+                self.whiteIToP.pop(newIndexes)
+                self.whitePoints-=oldpoints
+            if self.fullBoard[newRow][newCol].kind=='p' and newRow==7:#pawn to queen
+                self.fullBoard[newRow][newCol]=piece(900,'q','w')
+                self.blackPoints+=800
+                for i in range(2,8): 
+                    queen="q"
+                    newName=queen.join(str(i))
+                    if newName in self.blackPieces: #if there are multiple queens 
+                        continue 
+                    else:
+                        self.blackPieces.append(newName)
+                        self.blackIndexes[newName]=newIndexes
+                        self.blackIToP[newIndexes]=newName
+                        break
+                self.blackPieces.pop(index)
+                self.blackIndexes.pop(self.whitePieces[index])
+                self.blackIToP.pop(initialCoords)
+                self.turn+=1
+                self.fullBoard[oldRow][oldCol]=piece(0,'n','n')#need to return here, because in this special situation, index map updating is completely different. 
+                return
+            self.fullBoard[newRow][newCol]=piece.copy(self.fullBoard[oldRow][oldCol])
+            self.blackIndexes[self.whitePieces[index]]=newIndexes
+            self.blackIToP[newIndexes]=self.blackPieces[index]#have to reset all fields to reflect information on the new board. 
+            self.fullBoard[oldRow][initialCoords[1]]=piece(0,'n','n')
+            self.turn+=1
 
     def printBoard(self):
-        for i in range(8):
-            print(self.fullBoard[i][0].type, self.fullBoard[i][1].type, self.fullBoard[i][2].type, self.fullBoard[i][3].type,self.fullBoard[i][4].type, self.fullBoard[i][5].type, self.fullBoard[i][6].type, self.fullBoard[i][7].type)
+        for i in range(0,7):
+            print(i,self.fullBoard[i][0].kind, self.fullBoard[i][1].kind, self.fullBoard[i][2].kind, self.fullBoard[i][3].kind,self.fullBoard[i][4].kind, self.fullBoard[i][5].kind, self.fullBoard[i][6].kind, self.fullBoard[i][7].kind)
+        print(" ", "A", "B", "C", "D", "E", "F", "G", "H")
 
 class treeNode: 
     def __init__(self, pgame:board) -> None:
@@ -1144,62 +954,48 @@ class treeNode:
         self.parent=treeNode#previous board 
         self.game=board
 def generateTopMoves(currGame:board, numMoves: int): #this function works for either team, so it can simulate human moves. 
+    adv={}
     re=[]
-    currGame.allMovesGen()
-    currGame.playerMovesElimininator()#depth first search. Start with a given board that represents a possible move. 
+    advantageVals=[]
+    currGame.allMovesGen()#need to map advantage to top boards 
     placeHolder=currGame.deepClone()
     if currGame.turn==0:
         for i in currGame.whitePieces: 
             for j in currGame.whiteaVailableMoves[currGame.whitePieces[i]]:
-                if len(re)<numMoves: 
                     currGame.move(j,i)
                     currGame.allMovesGen() 
                     currGame.AIAdvantageEval()
-                    re.append(currGame)
-                else: 
-                    currGame.move(j,i)
-                    currGame.allMovesGen() 
-                    currGame.AIAdvantageEval()
-                    re.sort(key=lambda x:x.advantage)#sorts by the advantage parameter. 
-                    if currGame.AIteam=="b":
-                        if re[0].advantage < currGame.advantage:
-                            re[0]=currGame
-                        currGame=placeHolder
-                    else: 
-                        if re[0].advantage > currGame.advantage:
-                            re[0]=currGame
-                        currGame=placeHolder
+                    a=currGame.advantage
+                    adv[a]=[i,j]#map advantage parameter to two highest indexes
+                    advantageVals.append(a)
+        advantageVals.sort(reverse=True)
+        for i in range(0,numMoves): 
+            currGame.move(adv[advantageVals[i]][0],advantageVals[i][1])
+            re.append(currGame)
+            currGame=placeHolder
+        return re#returns a list of boards 
     else:
-        for i in currGame.blackPieces: 
+        for i in currGame.whitePieces: 
             for j in currGame.blackAvailableMoves[currGame.blackPieces[i]]:
-                if len(re)<numMoves: 
-                    re.append(currGame.blackAvailableMoves[currGame.blackPieces[i]][j])
-                else: #if its black vs if its white. 
                     currGame.move(j,i)
-                    currGame.allMovesGen()
-                    currGame.playerMovesElimininator()#depth first search. Start with a given board that represents a possible move. 
+                    currGame.allMovesGen() 
                     currGame.AIAdvantageEval()
-                    re.sort(currGame.advantage)
-                    if currGame.AIteam=="w":
-                        if re[0]< currGame.advantage:
-                            re.pop(0)
-                            re.append(i,j)#this function generates the n moves that put the player in the best position.
-                        currGame=placeHolder
-                    else: 
-                        if re[0]>currGame.advantage:
-                            re.pop(0)
-                            re.append(i,j)#this function generates the n moves that put the player in the best position.
-                        currGame=placeHolder
-    for i in re: 
-        re[i]=treeNode(re[i])
-    return re
+                    a=currGame.advantage
+                    adv[a]=[i,j]#map advantage parameter to two highest indexes
+                    advantageVals.append(a)
+        advantageVals.sort(reverse=True)
+        for i in range(0,numMoves): 
+            currGame.move(adv[advantageVals[i]][0],advantageVals[i][1])
+            re.append(currGame)
+            currGame=placeHolder
+        return re
 
 def search(currGame:treeNode, depth:int, alphaBeta:int)->int:#Later, I want the depth to be predetermined by what stage of the game it is, earlier=less depth. 
     depth+=depth%2#need to end on an odd # of searches so that it's the players turn. 
     currGame.level+=currGame.parent.level+1
     destroy=False
     miniMax=10000000000
-    if currGame.level==depth|currGame.game.gameState!=0:#if game is over, do not branch further on the tree. 
+    if currGame.level==depth or currGame.game.gameState!=0:#if game is over, do not branch further on the tree. 
         if currGame.game.advantage<miniMax: 
             miniMax=currGame.game.advantage
             return
@@ -1211,20 +1007,24 @@ def search(currGame:treeNode, depth:int, alphaBeta:int)->int:#Later, I want the 
         currGame.children=()
         return
     else:
-        if destroy!=False&currGame.children==():
+        if destroy!=False and currGame.children==[]:
             currGame.children=generateTopMoves(currGame,5)#5 top moves for now, may change this based on how things run
         for i in len(currGame.children): 
             search(currGame.children[i],depth, alphaBeta)#use backtracking/recursion to generate everything. returning will jump to this statement. 
     return miniMax#this parameter is what the AI will base each move on 
 def AImove(game:board):
+    game.allMovesGen()
+    game.AIAdvantageEval()
+    if game.gameState!=0:#prevent calling the search function if game is over 
+        return
     bestSearch=-100000000
     moveIndexes=(0,0)
     reference=game.deepClone()
-    if game.AIteam=="w": 
-        for i in range(game.whitePieces):
-            for j in game.whiteaVailableMoves[game.whitePieces[j]]: 
-                game=reference
-                game.move
+    if game.AIteam=="w": #AI team taken from player input
+        for i in range(len(game.whitePieces)):
+            for j in range(len(game.whiteaVailableMoves[game.whitePieces[j]])): 
+                game=reference.deepClone()
+                game.move(i,j)
                 currSearch=treeNode(game)
                 currScore=search(currSearch, 6, -200)
                 if bestSearch<currScore: #eventually I want to figure out algorithms for evaluating depth and alphaBeta based on board conditions, but I need to look at runtimes first. 
@@ -1233,15 +1033,22 @@ def AImove(game:board):
     else: 
         for i in range(game.blackPieces):
             for j in game.blackAvailableMoves[game.whitePieces[j]]: 
+                game=reference.deepClone()
+                game.move(i,j)
                 currSearch=treeNode(game)
                 currScore=search(currSearch, 6, -200)
                 if bestSearch<currScore: #eventually I want to figure out algorithms for evaluating depth and alphaBeta based on board conditions, but I need to look at runtimes first. 
                     moveIndexes=(i,j)
                     bestSearch=currScore
     game.move(moveIndexes[0],moveIndexes[1])
+
+
 def playerMove(game:board):
     game.printBoard() 
     game.allMovesGen()
+    game.AIAdvantageEval()
+    if game.gameState!=0:
+        return
     print("indexes of piece? ex. A4, case sensitive")
     valid=False
     row=-1
@@ -1249,43 +1056,86 @@ def playerMove(game:board):
     newRow=-1
     newCol=-1
     Piece=""
-    if game.turn%2==0:
+    if game.AIteam=="b":
         while valid==False:
             strInd=input()
             row=ord(strInd[1])-ord('1')#1 is row zero here, take user input, convert char to int using ascii
+            row=7-row#indexes of chess board are flipped from array indexing  
             col=ord(strInd[0])-ord('A')#A is col 0, B is col 1, etc. 
             if row*10+col in game.whiteIToP:
                 Piece=game.whiteIToP[row*10+col]
                 valid=True#needs to map to a value. 
+            else: 
+                print("Invalid Indexes, please pick a square with a white piece.")
+        valid2=False
+        while valid2==False: 
             print("Where do you want to move it?")
             strInt=input()
-            valid2=False
             newRow=ord(strInt[1])-ord('1')#1 is row zero here, take user input, convert char to int using ascii
             newCol=ord(strInt[0])-ord('A')#A is col 0, B is col 1, etc. 
+            newRow=7-newRow
             if (newRow, newCol) in game.whiteaVailableMoves[Piece]:
                 valid2=True
-            if valid2==False: 
-                valid=False
+            else:
+                print("Please enter a valid move for this piece.")
         i1=game.whitePieces.index(Piece)
         i2=game.whiteaVailableMoves[Piece].index(Piece)#this could be done more efficiently, because the move function was designed for the AI to do all this quickly, but efficiency in the player move is far less important. 
         game.move(i1,i2)
+
+
     else: 
         while valid==False:
             strInd=input()
             row=ord(strInd[1])-ord('1')#1 is row zero here, take user input, convert char to int using ascii
+            row=7-row#indexes of chess board are flipped from array indexing  
             col=ord(strInd[0])-ord('A')#A is col 0, B is col 1, etc. 
             if row*10+col in game.blackIToP:
-                Piece=game.blackIToP[row*10+col]
+                Piece=game.whiteIToP[row*10+col]
                 valid=True#needs to map to a value. 
+            else: 
+                print("Invalid Indexes, please pick a square with a white piece.")
+        valid2=False
+        while valid2==False: 
             print("Where do you want to move it?")
             strInt=input()
-            valid2=False
             newRow=ord(strInt[1])-ord('1')#1 is row zero here, take user input, convert char to int using ascii
             newCol=ord(strInt[0])-ord('A')#A is col 0, B is col 1, etc. 
+            newRow=7-newRow
             if (newRow, newCol) in game.blackAvailableMoves[Piece]:
                 valid2=True
-            if valid2==False: 
-                valid=False
-        i1=game.blackPieces.index(Piece)
-        i2=game.blackAvailableMoves[Piece].index(Piece)#this could be done more efficiently, because the move function was designed for the AI to do all this quickly, but efficiency in the player move is far less important. 
+            else:
+                print("Please enter a valid move for this piece.")
+        i1=game.whitePieces.index(Piece)
+        i2=game.whiteaVailableMoves[Piece].index(Piece)#this could be done more efficiently, because the move function was designed for the AI to do all this quickly, but efficiency in the player move is far less important. 
         game.move(i1,i2)
+#main 
+theGame=board()
+theGame.printBoard()
+print("What team would you like to play as? w or b, case sensitive.")
+valid=False
+while valid==False: 
+    playerTeam=input()
+    if playerTeam=="b" or playerTeam=="w": 
+        valid=True
+        if playerTeam=="b":
+            theGame.AIteam="w"
+        else: 
+            theGame.AIteam="b"
+    else: 
+        print("Invalid Team Input")
+if playerTeam=="w":
+    while theGame.gameState==0:
+        theGame.printBoard()
+        playerMove(theGame)
+        AImove(theGame)
+else: 
+    while theGame.gameState==0:
+        AImove(theGame)
+        theGame.printBoard()
+        playerMove()
+if theGame.advantage==0: 
+    print("It's a draw by stalemate")
+elif theGame.advantage>0: 
+    print("You lose")
+else: 
+    print("You win")
