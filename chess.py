@@ -2,16 +2,21 @@ import copy
 def mapping( n:int)->str:#maps indexes into the standard form, makes it a little easier to compare my programs generated outputs to a real board 
     if n<0:
         n=n*-1
-    ret=""
-    rowMap={0:"8", 1:"7", 2:"6", 3:"5",4:"4",5:"3",6:"2", 7:"1"}
-    colMap={0:"A",1:"B", 2:"C", 3:"D", 4:"E", 5:"F", 6:"G", 7:"H"}
-    col=n%10
-    row=n//10
-    a=colMap[col]
-    b=rowMap[row]
-    ret+=a
-    ret+=b
-    return ret
+    elif n==99: 
+        return "KS"
+    elif n==100: 
+        return "QS"
+    else: 
+        ret=""
+        rowMap={0:"8", 1:"7", 2:"6", 3:"5",4:"4",5:"3",6:"2", 7:"1"}
+        colMap={0:"A",1:"B", 2:"C", 3:"D", 4:"E", 5:"F", 6:"G", 7:"H"}
+        col=n%10
+        row=n//10
+        a=colMap[col]
+        b=rowMap[row]
+        ret+=a
+        ret+=b
+        return ret
 
 class openingTreeNode: 
     def __init__(self, pChildren:list, pPiece:str, pMoveIndexes:int, pLevel:int, pTeam:str): 
@@ -831,8 +836,9 @@ class board:
         print("w:")
         for i in self.whitePieces:
             moveIndexesw=[]
-            for j in self.whiteaVailableMoves[i]:
-                moveIndexesw.append(mapping(j))
+            if self.whiteaVailableMoves[i]!=None: 
+                for j in self.whiteaVailableMoves[i]:
+                    moveIndexesw.append(mapping(j))
             print(i)
             print("Indexes: ", mapping(self.whiteIndexes[i]))
             print("Available Moves: ",moveIndexesw)
@@ -1300,8 +1306,10 @@ class treeNode:
             self.children.append(treeNode(i,self.level+1,self))
         
 def search(currGame:treeNode, depth:int, alphaBeta:int):#Later, I want the depth to be predetermined by what stage of the game it is, earlier=less depth. 
+    currGame.game.AIAdvantageEval()
     destroy=False
     miniMax=1000000
+    currGame.game.printInfo()
     if currGame.level==depth or currGame.game.inPlay==False:#if game is over, do not branch further on the tree. 
         if currGame.game.AIAdvantage<miniMax:
             miniMax=currGame.game.AIAdvantage
