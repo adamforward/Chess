@@ -1527,7 +1527,6 @@ elif theGame.AIAdvantage<0:
     print("Checkmate, you win. Congradulations!!!")
 else:
     print("Checkmate, you lose. Better luck next time!!!")
-#can you help me debug this python file
             
 
         
