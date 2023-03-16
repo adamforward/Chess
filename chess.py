@@ -100,49 +100,7 @@ class board:
 
 
 
-    def deepClone(self):#will need to do this once for AI to work.
-        ret=board()
-        ret.AIAdvantage=self.AIAdvantage
-        ret.AIteamIsWhite=self.AIteamIsWhite
-        ret.bHasMovedKing=self.bHasMovedKing
-        ret.AIteamIsWhite=self.AIteamIsWhite
-        ret.bHasMovedR1=self.bHasMovedR1
-        ret.bHasMovedR2=self.bHasMovedR2
-        ret.blackPrime=self.blackPrime
-        ret.blackPrime1=self.blackPrime1
-        ret.blackPoints=self.blackPoints
-        ret.blackPieces=[]
-        ret.blackIToP.clear()
-        ret.blackAvailableMoves.clear()
-        ret.blackIndexes.clear()
-        for i in self.blackPieces: 
-            ret.blackIToP[self.blackIndexes[i]]=i
-            ret.blackPieces[i]=i
-            ret.blackIndexes[i]=self.blackIToP[i]
-            for j in self.blackAvailableMoves[i]:
-                ret.blackAvailableMoves[i]=j
-        ret.whiteIndexes.clear()
-        ret.whiteaVailableMoves.clear()
-        ret.whiteIndexes.clear()
-        ret.whitePieces=[]
-        for i in self.whitePieces: 
-            ret.whitePieces[i]=i
-            ret.whiteIToP[self.whiteIndexes[i]]=i
-            ret.whitePieces[i]=i
-            ret.whiteIndexes[i]=self.whiteIToP[i]
-            for j in self.whiteaVailableMoves[i]:
-                ret.whiteaVailableMoves[i]=j
-        ret.whitePoints=self.whitePoints
-        ret.whitePrime1=self.whitePrime1
-        ret.whitePrime=self.whitePrime
-        ret.wHasMovedKing=self.wHasMovedKing
-        ret.wHasMovedR1=self.wHasMovedR1
-        ret.wHasMovedR2=self.wHasMovedR2
-        for i in range(0,7):
-            for j in range(0,7):
-                ret.fullBoard[i][j]=self.fullBoard[i][j]
-        ret.turn=self.turn
-        ret.inCheckStored=self.inCheckStored
+    
         
 
 
@@ -982,6 +940,9 @@ class board:
                         if j in goodMoves: 
                             overLap.append(j)#gets rid of all the moves that do not block the check.
                     self.blackAvailableMoves[i]=overLap
+            for i in self.blackAvailableMoves["K"]: 
+                if i in goodMoves: 
+                    self.blackAvailableMoves["K"].remove(i)
 
                     
         else: 
@@ -1056,6 +1017,9 @@ class board:
                         if j in goodMoves: 
                             overLap.append(j)#gets rid of all the moves that do not block the check.
                     self.whiteaVailableMoves[i]=overLap
+            for i in self.whiteaVailableMoves["K"]:
+                if i in goodMoves: 
+                    self.whiteaVailableMoves["K"].remove(i)
 
 
     def move(self, movePiece, indexes):#this will only be called after the gen all moves, so you dont have to run it twice 
@@ -1255,7 +1219,7 @@ class board:
     def printMirriorBoard(self):
         labels = "  A  B  C  D  E  F  G  H"
         for i in range(8):
-            row = " ".join([self.format_cell(self.fullBoard[7-i][j]) for j in range(8)])
+            row = " ".join([self.format_cell(self.fullBoard[7-i][7-j]) for j in range(8)])
             print(f"{8-i} {row}")
         print(labels)
 
