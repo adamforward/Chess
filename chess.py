@@ -642,26 +642,26 @@ class board:
             self.whiteaVailableMoves["K"].append(99)
         if wQS==True: 
             self.whiteaVailableMoves["K"].append(100)
-        
-        for i in bpinned: #i should represent a vector
-            if i!=[]: 
-                overLap=[]
-                pinnedI=i.pop(len(i)-1)
-                pinnedP=self.blackIToP[pinnedI]
-                for j in i:
-                    if j in self.blackAvailableMoves[pinnedP]: 
-                        overLap.append(j)
-                self.blackAvailableMoves[pinnedP]=overLap
-
-        for i in wpinned: 
-            if i!=[]: 
-                overLap=[]
-                pinnedI=i.pop(len(i)-1)
-                pinnedP=self.whiteIToP[pinnedI]
-                for j in i:
-                    if j in self.whiteaVailableMoves[pinnedP]: 
-                        overLap.append(j)
-                self.whiteaVailableMoves[pinnedP]=overLap
+        if len(bpinned[0])!=0: 
+            for i in bpinned: #i should represent a vector
+                if i!=[] or i!=None: 
+                    overLap=[]
+                    pinnedI=i.pop(len(i)-1)
+                    pinnedP=self.blackIToP[pinnedI]
+                    for j in i:
+                        if j in self.blackAvailableMoves[pinnedP]: 
+                            overLap.append(j)
+                    self.blackAvailableMoves[pinnedP]=overLap
+        if len(wpinned[0])!=0:
+            for i in wpinned: 
+                if i!=[] or i!=None: 
+                    overLap=[]
+                    pinnedI=i.pop(len(i)-1)
+                    pinnedP=self.whiteIToP[pinnedI]
+                    for j in i:
+                        if j in self.whiteaVailableMoves[pinnedP]: 
+                            overLap.append(j)
+                    self.whiteaVailableMoves[pinnedP]=overLap
                     
         if whiteChecking!=[] and self.turn%2==0: #now that moves and necessary info has been generated, need to eliminate moves that put the king into check
             for i in whiteChecking:
