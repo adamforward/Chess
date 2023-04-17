@@ -45,7 +45,6 @@ class piece:
 #Using a
 class board:
     def __init__(self):
-        self.movesLog=[]
         self.inCheckStored=False
         self.AIteamIsWhite=True
         self.inPlay=True
@@ -802,15 +801,6 @@ class board:
         self.printBoard()
         print("inPlay:")
         print(self.inPlay)
-        print("Moves Log:")
-        a=0
-        for i in self.movesLog:
-            if a%2==0:
-                print("white:", i)
-                a+=1
-            else:
-                print("black:", i)
-                a+=1
         print("games simulated:")
         print("w:")
         for i in self.whitePieces:
@@ -1044,7 +1034,6 @@ class board:
 
 
     def move(self, movePiece, indexes):#this will only be called after the gen all moves, so you dont have to run it twice 
-        self.movesLog.append((movePiece, indexes))
         if self.turn%2==0: #if it's white's turn.#availableMoveNum is the index, 
             initialCoords=self.whiteIndexes[movePiece]
             newIndexes=indexes
@@ -1493,7 +1482,6 @@ if theGame.AIteamIsWhite ==True:
                 playerValidMove=False
                 theGame.printMirrorBoard()
                 theGame.allMovesGen()
-                theGame.printInfo()
                 playerSTR=""
                 print("Enter the indexes of the piece you want to move. Example: H4")
                 while playerValidPiece==False:
@@ -1540,12 +1528,11 @@ else:
                 playerValidPiece=False
                 playerValidMove=False
                 theGame.allMovesGen()
-                theGame.printInfo()
+                theGame.printBoard()
                 playerSTR=""
                 print("Enter the indexes of the piece you want to move. Example: H4")
                 while playerValidPiece==False:
                     playerPiece=input()
-                    if playerPiece in 
                     playerIndexes=reverseMapping(playerPiece)
                     if playerIndexes in theGame.whiteIToP:
                         playerSTR=theGame.whiteIToP[playerIndexes]
