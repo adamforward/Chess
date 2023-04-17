@@ -1349,7 +1349,7 @@ def AImove(game:board):
                     reference=copy.deepcopy(game)
                     reference.move(i,j)
                     currSearch=treeNode(reference,0,None)#Edit here 
-                    currScore=search(currSearch, 4, alphaBeta)
+                    currScore=search(currSearch, 5, alphaBeta)
                     if bestSearch<currScore: #eventually I want to figure out algorithms for evaluating depth and alphaBeta based on board conditions, but I need to look at runtimes first. 
                         moveIndexes=[i,j]
                         bestSearch=currScore
@@ -1468,8 +1468,6 @@ if theGame.AIteamIsWhite ==True:
     
     while theGame.inPlay==True:
         if theGame.turn%2==0:
-            theGame.printInfo()
-            theGame.allMovesGen()
             AIMove=AImove(theGame)
             theGame.move(AIMove[0], AIMove[1])
             theGame.allMovesGen()
@@ -1517,10 +1515,10 @@ if theGame.AIteamIsWhite ==True:
 else: 
     while theGame.inPlay==True:
         if theGame.turn%2==1:
-            theGame.allMovesGen()
-            theGame.printInfo()
             AIMove=AImove(theGame)
             theGame.move(AIMove[0], AIMove[1])
+            theGame.allMovesGen()
+            theGame.AIAdvantageEval()
         else:
             playerMistake=True
             while playerMistake==True:
