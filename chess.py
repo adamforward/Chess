@@ -296,20 +296,21 @@ class board:
             currCol=currIndex%10
             if currIndex==33 or currIndex==34 or currIndex==44 or currIndex==43:#favor moves from the middle 
                 blackAdvantage+=2*len(self.blackAvailableMoves[ind])
-            if len(self.blackAvailableMoves[ind])>0: 
-                blackAdvantage+=len(self.blackAvailableMoves[ind])#more moves means more piece development 
-                noMovesB=False
-                for j in self.blackAvailableMoves[ind]:
-                    if j==99 or j==100: 
-                        continue
-                    moveIndexes=j
-                    moveRow=moveIndexes//10
-                    moveCol=moveIndexes%10
-                    if moveIndexes==33 or moveIndexes==34 or moveIndexes==44 or moveIndexes==43:
-                    #moves to the middle
-                        blackAdvantage+=3#once again, I will look at these weights after playing against it
-                    if self.turn%2==1:
-                        if self.fullBoard[moveRow][moveCol].team=='w' and self.fullBoard[moveRow][moveCol].val>self.fullBoard[currRow][currCol].val:
+            if self.blackAvailableMoves[i]!=None:
+                if len(self.blackAvailableMoves[ind])>0: 
+                    blackAdvantage+=len(self.blackAvailableMoves[ind])#more moves means more piece development 
+                    noMovesB=False
+                    for j in self.blackAvailableMoves[ind]:
+                        if j==99 or j==100: 
+                            continue
+                        moveIndexes=j
+                        moveRow=moveIndexes//10
+                        moveCol=moveIndexes%10
+                        if moveIndexes==33 or moveIndexes==34 or moveIndexes==44 or moveIndexes==43:
+                        #moves to the middle
+                            blackAdvantage+=3#once again, I will look at these weights after playing against it
+                        if self.turn%2==1:
+                            if self.fullBoard[moveRow][moveCol].team=='w' and self.fullBoard[moveRow][moveCol].val>self.fullBoard[currRow][currCol].val:
                                 blackAdvantage+=(self.fullBoard[moveRow][moveCol].val-self.fullBoard[currRow][currCol].val)//2
                             #if b pawn is attacking w queen and its black's turn, advantage is 850 points 
         if noMovesB==True and self.turn%2==1: #CheckMate, cannot stalemate within first 32 turns 
@@ -591,10 +592,10 @@ class board:
                     if j in allMoves: 
                         bKingMoves.remove(j)
             #looking to modify this function, only need to check whether or not q, r, b are pressuring king
-            if bKS==True:#can QS castle
+            if bKS==True and allMoves!=None:#can QS castle
                 if 76 in allMoves or 75 in allMoves or 74 in allMoves or 77 in allMoves: 
                     bKS=False
-            if bKS==True: 
+            if bKS==True and allMoves!=None:#can KS castle
                 if 44 in allMoves or 73 in allMoves or 72 in allMoves or 71 in allMoves or 70 in allMoves: 
                     bQS=False
 
@@ -624,14 +625,14 @@ class board:
                     temp=self.bBishopPinning(tempPiece)
                     if temp!=[]: 
                         wpinned.append(temp)
-            if allMoves!=[] and wKingMoves!=[]:
+            if allMoves!=None and (wKingMoves!=[] or wKingMoves!=None):
                 for j in wKingMoves:
                     if j in allMoves: 
                         wKingMoves.remove(j)
-            if wKS==True:#can QS castle
+            if wKS==True and allMoves!=None:#can QS castle
                 if 76 in allMoves or 75 in allMoves or 74 in allMoves or 77 in allMoves: 
                     wKS=False
-            if wQS==True:
+            if wQS==True and allMoves!=None:
                 if 44 in allMoves or 73 in allMoves or 72 in allMoves or 71 in allMoves or 70 in allMoves: 
                     wQS=False
         if bKS==True: 
@@ -1051,7 +1052,8 @@ class board:
                 self.whiteIndexes["r2"]=75
                 self.whiteIToP[76]="K"
                 self.whiteIToP[75]="r2"
-                self.turn+=1 
+                self.turn+=1
+                return 
             elif newIndexes==100: #QSCastle
                 self.fullBoard[7][4]=piece(0,'n','n')
                 self.fullBoard[7][3]=piece(500,'r','w')
@@ -1063,6 +1065,7 @@ class board:
                 self.whiteIToP[72]="K"
                 self.whiteIToP[73]="r2"
                 self.turn+=1
+                return
             else: 
                 oldpoints=self.fullBoard[newRow][newCol].val#old piece refers to the one that's being captured.
                 if oldpoints>0:#if a black piece is captured 
@@ -1123,6 +1126,7 @@ class board:
                 self.blackIToP[76]="K"
                 self.blackIToP[75]="r2"
                 self.turn+=1
+                return
             elif newIndexes==100: #QSCastle
                 self.fullBoard[0][4]=piece(0,'n','n')
                 self.fullBoard[0][3]=piece(500,'r','b')
@@ -1134,6 +1138,7 @@ class board:
                 self.blackIToP[2]="K"
                 self.blackIToP[3]="r2"
                 self.turn+=1
+                return
             else:
                 if movePiece=="K":
                     self.prime2=self.prime2*13
@@ -1336,7 +1341,7 @@ def AImove(game:board):
                     reference=copy.deepcopy(game)
                     reference.move(i,j)
                     currSearch=treeNode(reference,0,None)#Edit here
-                    currScore=search(currSearch, 5, alphaBeta)
+                    currScore=search(currSearch, 6, alphaBeta)
                     if bestSearch<currScore: #eventually I want to figure out algorithms for evaluating depth and alphaBeta based on board conditions, but I need to look at runtimes first. 
                         moveIndexes=[i,j]
                         bestSearch=currScore
@@ -1348,7 +1353,7 @@ def AImove(game:board):
                     reference=copy.deepcopy(game)
                     reference.move(i,j)
                     currSearch=treeNode(reference,0,None)#Edit here 
-                    currScore=search(currSearch, 5, alphaBeta)
+                    currScore=search(currSearch, 6, alphaBeta)
                     if bestSearch<currScore: #eventually I want to figure out algorithms for evaluating depth and alphaBeta based on board conditions, but I need to look at runtimes first. 
                         moveIndexes=[i,j]
                         bestSearch=currScore
