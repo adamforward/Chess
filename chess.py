@@ -1334,7 +1334,6 @@ def AImove(game:board):
             if game.whiteaVailableMoves[i]!=None:
                 for j in game.whiteaVailableMoves[i]: 
                     reference=copy.deepcopy(game)
-                    reference.printInfo()
                     reference.move(i,j)
                     currSearch=treeNode(reference,0,None)#Edit here
                     currScore=search(currSearch, 5, alphaBeta)
