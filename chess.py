@@ -1341,7 +1341,7 @@ def AImove(game:board):
                     reference=copy.deepcopy(game)
                     reference.move(i,j)
                     currSearch=treeNode(reference,0,None)#Edit here
-                    currScore=search(currSearch, 6, alphaBeta)
+                    currScore=search(currSearch, 5, alphaBeta)
                     if bestSearch<currScore: #eventually I want to figure out algorithms for evaluating depth and alphaBeta based on board conditions, but I need to look at runtimes first. 
                         moveIndexes=[i,j]
                         bestSearch=currScore
@@ -1353,7 +1353,7 @@ def AImove(game:board):
                     reference=copy.deepcopy(game)
                     reference.move(i,j)
                     currSearch=treeNode(reference,0,None)#Edit here 
-                    currScore=search(currSearch, 6, alphaBeta)
+                    currScore=search(currSearch, 5, alphaBeta)
                     if bestSearch<currScore: #eventually I want to figure out algorithms for evaluating depth and alphaBeta based on board conditions, but I need to look at runtimes first. 
                         moveIndexes=[i,j]
                         bestSearch=currScore
