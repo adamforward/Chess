@@ -1,4 +1,7 @@
 import copy
+#from chess import genOpeningTree
+#opening tree has data from 
+
 def mapping( n:int)->str:#maps indexes into the standard form, makes it a little easier to compare my programs generated outputs to a real board 
     if n<0:
         n=n*-1
@@ -45,6 +48,7 @@ class piece:
 #Using a
 class board:
     def __init__(self):
+        self.movesLog=[]
         self.inCheckStored=False
         self.AIteamIsWhite=True
         self.inPlay=True
@@ -66,7 +70,7 @@ class board:
             "p1":60,"p2":61,"p3":62,"p4":63,"p5":64,"p6":65,"p7":66,"p8":67}
         self.blackIToP={0:"r1",7:"r2",2:"b1",5:"b2",1:"k1",6:"k2",4:"K",3:"q",\
             10:"p1",11:"p2",12:"p3",13:"p4",14:"p5",15:"p6",16:"p7",17:"p8"}#important in cutting down on runtime in many methods used below. 
-        self.whiteIToP={70:"r1",77:"r2",72:"b1",75:"b2",71:"k2",76:"k2",74:"K",73:"q",\
+        self.whiteIToP={70:"r1",77:"r2",72:"b1",75:"b2",71:"k1",76:"k2",74:"K",73:"q",\
             60:"p1",61:"p2",62:"p3",63:"p4",64:"p5",65:"p6",66:"p7",67:"p8"}#index to pieces 
         self.blackPoints=3800
         self.whitePoints=3800
@@ -171,7 +175,7 @@ class board:
             if self.fullBoard[4][col+1].team=='w' and self.fullBoard[4][col+1].kind=='p' and self.fullBoard[5][col+1].team=='n': #en pessant, same idea but col index is 6
                 #en pessant, same idea but col index is 6
                 if self.whitePrime%primeMethods.primes(col+1)==0 and self.blackPrime1%primeMethods.primes1(self.blackIToP[row*10+col])==0: 
-                    r=50+col-1
+                    r=50+col+1
                     re.append(r)
         return re
         
@@ -558,10 +562,15 @@ class board:
         #self.canQSCastle() is checked here, represented by (10,10)
         blackChecking=[]
         whiteChecking=[]
-        bpinned=[[]]
-        wpinned=[[]]
+        bPinnedVectors=[]
+        wPinnedVectors=[]
+        bPinnedPieces=[]
+        wPinnedPieces=[]        
         wKingMoves=self.generateAvailableMoves(self.whiteIndexes["K"]//10, self.whiteIndexes["K"]%10)
         bKingMoves=self.generateAvailableMoves(self.blackIndexes["K"]//10, self.blackIndexes["K"]%10)#will need to remove some of these 
+        overW=[]
+        overB=[]
+        
         for i in self.whitePieces:
             if i=="K":
                 continue
@@ -572,25 +581,31 @@ class board:
             self.whiteaVailableMoves[tempPiece]=allMoves
             checking=False
             if allMoves!=None:
-                if self.blackIndexes["K"] in self.whiteaVailableMoves[i]:#in check condition
+                if self.blackIndexes["K"] in self.whiteaVailableMoves[tempPiece]:#in check condition
                     self.inCheckStored=True #only look to see if black's in check if it's blacks turn, cannot move into check 
-                    whiteChecking.append(i)
+                    whiteChecking.append(tempPiece)
                     checking=True
-            if self.fullBoard[currRow][currCol].kind=='r' or self.fullBoard[currRow][currCol].kind=='q' and checking==False and self.turn%2==0:
+            if self.fullBoard[currRow][currCol].kind=='r' or self.fullBoard[currRow][currCol].kind=='q' and checking==False:
                 if self.whiteIndexes[tempPiece]//10==self.blackIndexes["K"]//10 and self.whiteIndexes[tempPiece]%10==self.blackIndexes["K"]%10: 
                     temp=self.wRookPinning(tempPiece)
                     if temp!=[]: 
-                        bpinned.append(temp)
-            if (self.fullBoard[currRow][currCol].kind=='q' or self.fullBoard[currRow][currCol].kind=='b') and checking==False and self.turn%2==0: 
+                        a=temp[len(temp)-1]
+                        temp.pop(len(temp)-1)
+                        bPinnedVectors.append(temp)
+                        bPinnedPieces.append(a)
+            if (self.fullBoard[currRow][currCol].kind=='q' or self.fullBoard[currRow][currCol].kind=='b') and checking==False: 
                 if abs(self.blackIndexes["K"]%10-self.whiteIndexes[tempPiece]%10)==\
                     abs(self.blackIndexes["K"]//10-self.whiteIndexes[tempPiece]//10):#if they're on same diagonal 
                     temp=self.wBishopPinning(tempPiece)
                     if temp!=[]: 
-                        bpinned.append(temp)
-            if allMoves!=None and bKingMoves!=[]:
+                        a=temp[len(temp)-1]
+                        temp.pop(len(temp)-1)
+                        bPinnedVectors.append(temp)
+                        bPinnedPieces.append(a)
+            if allMoves!=None and bKingMoves!=None:
                 for j in bKingMoves: 
                     if j in allMoves: 
-                        bKingMoves.remove(j)
+                        overB.append(j)
             #looking to modify this function, only need to check whether or not q, r, b are pressuring king
             if bKS==True and allMoves!=None:#can QS castle
                 if 76 in allMoves or 75 in allMoves or 74 in allMoves or 77 in allMoves: 
@@ -599,6 +614,7 @@ class board:
                 if 44 in allMoves or 73 in allMoves or 72 in allMoves or 71 in allMoves or 70 in allMoves: 
                     bQS=False
 
+        
         for i in self.blackPieces:
             if i=="K":
                 continue
@@ -610,31 +626,69 @@ class board:
             self.blackAvailableMoves[tempPiece]=allMoves
             checking=False
             if allMoves!=None:
-                    if self.whiteIndexes["K"] in self.blackAvailableMoves[i]:#in check condition
-                        self.inCheckStored=True
+                    if self.whiteIndexes["K"] in self.blackAvailableMoves[tempPiece]:#in check condition
+
                         blackChecking.append(tempPiece)
                         checking=True
-            if (self.fullBoard[currRow][currCol].kind=='r' or self.fullBoard[currRow][currCol].kind=='q') and checking==False and self.turn%2==1 and self.inPlay==True:
+            if (self.fullBoard[currRow][currCol].kind=='r' or self.fullBoard[currRow][currCol].kind=='q') and checking==False and self.inPlay==True:
                 if self.blackIndexes[tempPiece]//10==self.whiteIndexes["K"]//10 or self.blackIndexes[tempPiece]%10==self.whiteIndexes["K"]%10: 
                     temp=self.bRookPinning(tempPiece)
                     if temp!=[]: 
-                        wpinned.append(temp)
-            if (self.fullBoard[currRow][currCol].kind=='q' or self.fullBoard[currRow][currCol].kind=='b') and checking==False and self.turn%2==1 and self.inPlay==True: 
+                        a=temp[len(temp)-1]
+                        temp.pop(len(temp)-1)
+                        wPinnedVectors.append(temp)
+                        wPinnedPieces.append(a)
+            if (self.fullBoard[currRow][currCol].kind=='q' or self.fullBoard[currRow][currCol].kind=='b') and checking==False and self.inPlay==True: 
                 if abs(self.whiteIndexes["K"]%10-self.blackIndexes[tempPiece]%10)==\
                     abs(self.whiteIndexes["K"]//10-self.blackIndexes[tempPiece]//10):#if they're on same diagonal 
                     temp=self.bBishopPinning(tempPiece)
                     if temp!=[]: 
-                        wpinned.append(temp)
-            if allMoves!=None and (wKingMoves!=[] or wKingMoves!=None):
+                        a=temp[len(temp)-1]
+                        temp.pop(len(temp)-1)
+                        wPinnedVectors.append(temp)
+                        wPinnedPieces.append(a)
+            if allMoves!=None and wKingMoves!=None:
                 for j in wKingMoves:
                     if j in allMoves: 
-                        wKingMoves.remove(j)
+                        overW.append(j)
             if wKS==True and allMoves!=None:#can QS castle
                 if 76 in allMoves or 75 in allMoves or 74 in allMoves or 77 in allMoves: 
                     wKS=False
             if wQS==True and allMoves!=None:
                 if 44 in allMoves or 73 in allMoves or 72 in allMoves or 71 in allMoves or 70 in allMoves: 
                     wQS=False
+        if bKingMoves!=None:
+            for i in overB:
+                if i in bKingMoves:
+                    bKingMoves.remove(i)
+        if wKingMoves!=None:
+            for i in overW:
+                if i in wKingMoves:
+                    wKingMoves.remove(i)
+        if self.whiteIndexes["K"]//10>1:
+            if self.whiteIndexes["K"]%10>0:#pawns don't generate this move unless there is already something there
+                if self.fullBoard[self.whiteIndexes["K"]//10-2][self.whiteIndexes["K"]%10-1].kind=='p'\
+                    and self.fullBoard[self.whiteIndexes["K"]//10-2][self.whiteIndexes["K"]%10-1].team=='b':
+                        if self.whiteIndexes["K"]-21 in wKingMoves:
+                            wKingMoves.remove(self.whiteIndexes["K"]-21)
+            if self.whiteIndexes["K"]%10<7:
+                if self.fullBoard[self.whiteIndexes["K"]//10-2][self.whiteIndexes["K"]%10+1].kind=='p'\
+                    and self.fullBoard[self.whiteIndexes["K"]//10-2][self.whiteIndexes["K"]%10+1].team=='b':
+                    if self.whiteIndexes["K"]-19 in wKingMoves:
+                        wKingMoves.remove(self.whiteIndexes["K"]-19)
+        if self.blackIndexes["K"]//10<6:
+            if self.blackIndexes["K"]%10>0:
+                if self.fullBoard[self.blackIndexes["K"]//10+2][self.blackIndexes["K"]%10-1].kind=='p'\
+                    and self.fullBoard[self.blackIndexes["K"]//10+2][self.blackIndexes["K"]%10-1].team=='w':
+                        if self.blackIndexes["K"]+19 in bKingMoves:
+                            bKingMoves.remove(self.blackIndexes["K"]+19)
+            if self.blackIndexes["K"]%10<7:
+                if self.fullBoard[self.blackIndexes["K"]//10-2][self.blackIndexes["K"]%10+1].kind=='p'\
+                    and self.fullBoard[self.blackIndexes["K"]//10-2][self.blackIndexes["K"]%1+1].team=='w':
+                        if self.blackIndexes["K"]+21 in bKingMoves:
+                            bKingMoves.remove(self.blackIndexes["K"]+21)
+        self.blackAvailableMoves["K"]=bKingMoves
+        self.whiteaVailableMoves["K"]=wKingMoves
         if bKS==True: 
             self.blackAvailableMoves["K"].append(99)#KS castle check. 
         if bQS==True: 
@@ -643,28 +697,24 @@ class board:
             self.whiteaVailableMoves["K"].append(99)
         if wQS==True: 
             self.whiteaVailableMoves["K"].append(100)
-        if len(bpinned[0])!=0: 
-            for i in bpinned: #i should represent a vector
-                if i!=[] or i!=None: 
-                    overLap=[]
-                    pinnedI=i.pop(len(i)-1)
-                    pinnedP=self.blackIToP[pinnedI]
-                    for j in i:
-                        if j in self.blackAvailableMoves[pinnedP]: 
-                            overLap.append(j)
-                    self.blackAvailableMoves[pinnedP]=overLap
-        if len(wpinned[0])!=0:
-            for i in wpinned: 
-                if i!=[] or i!=None: 
-                    overLap=[]
-                    pinnedI=i.pop(len(i)-1)
-                    pinnedP=self.whiteIToP[pinnedI]
-                    for j in i:
-                        if j in self.whiteaVailableMoves[pinnedP]: 
-                            overLap.append(j)
-                    self.whiteaVailableMoves[pinnedP]=overLap
-                    
-        if whiteChecking!=[] and self.turn%2==0: #now that moves and necessary info has been generated, need to eliminate moves that put the king into check
+        if len(bPinnedVectors)!=0: 
+            for i in range(len(bPinnedPieces)): #i should represent a vector 
+                overLap=[]
+                pinnedP=bPinnedPieces[i]
+                for j in bPinnedVectors[i]:
+                    if j in self.blackAvailableMoves[pinnedP]: 
+                        overLap.append(j)
+                self.blackAvailableMoves[pinnedP]=overLap
+        if len(wPinnedVectors)!=0:
+            for i in range(len(wPinnedPieces)): 
+                overLap=[]
+                pinnedP=wPinnedPieces[i]
+                for j in wPinnedVectors[i]:
+                    if j in self.whiteaVailableMoves[pinnedP]: 
+                        overLap.append(j)
+                self.whiteaVailableMoves[pinnedP]=overLap
+          
+        if len(whiteChecking)>0: #now that moves and necessary info has been generated, need to eliminate moves that put the king into check
             for i in whiteChecking:
                 if i=="b" or i=="r" or i=="q":
                     direction=[]
@@ -674,7 +724,7 @@ class board:
 
                 else: 
                     self.inCheck1(i, "w")
-        if blackChecking!=[] and self.turn%2==1: 
+        if len(blackChecking)>0: 
             for i in blackChecking:
                 if i=="b" or i=="r" or i=="q":
                     direction=[]
@@ -704,7 +754,7 @@ class board:
                     done = True  # Set done to True after finding a black piece
                 else:
                     moveVector.append(10 * (wRow + j) + wCol)  # if team='n'
-            moveVector.append(pIndexes)
+            moveVector.append(self.blackIToP[pIndexes])
             if done == False:
                 return []
             return moveVector
@@ -721,9 +771,10 @@ class board:
                     done = True  # Set done to True after finding a black piece
                 else:
                     moveVector.append(10 * wRow + j + wCol)  # if team='n'
-            moveVector.insert(0, pIndexes)
             if done == False:
                 return []
+            moveVector.append(self.blackIToP[pIndexes])
+            print(moveVector)
             return moveVector
             
     def bRookPinning(self, pinning: str):
@@ -746,7 +797,7 @@ class board:
                     done = True
                 else:
                     moveVector.append(10 * (bRow + j) + bCol)  # if team='n'
-            moveVector.insert(0, pIndex)
+            moveVector.append(self.whiteIToP[pIndex])
             if done == False:
                 return []
             return moveVector
@@ -763,9 +814,10 @@ class board:
                     done = True
                 else:
                     moveVector.append(10 * bRow + j + bCol)  # if team='n'
-            moveVector.append(pIndex)
             if done == False:
                 return []
+            moveVector.append(self.whiteIToP[pIndex])
+            print(moveVector)
             return moveVector
 
 
@@ -774,6 +826,8 @@ class board:
         wCol=self.whiteIndexes[pinning]%10
         kRow=self.blackIndexes["K"]//10
         kCol=self.blackIndexes["K"]%10
+        if abs(wRow-kRow)!=abs(wCol-kCol) or wRow==kRow or wCol==kCol:
+            return []
         pIndexes=-1
         moveVector=[self.whiteIndexes[pinning]]
         #only called if wCol==kCol or wRow==kRow
@@ -792,14 +846,16 @@ class board:
                 done=True
             else: 
                 moveVector.append(10*(wRow+rInc)+cInc+wCol)#if team='n'
-        moveVector.append(pIndexes)
         if done==False: 
             return []
+        moveVector.append(self.blackIToP[pIndexes])
+        print(moveVector)
         return moveVector
 
 
     def printInfo(self):#debbugging function only 
-        self.printBoard()
+        print("movesLog")
+        print(self.movesLog)
         print("inPlay:")
         print(self.inPlay)
         print("games simulated:")
@@ -822,6 +878,7 @@ class board:
             print("Available Moves: ", moveIndexesb)
         print("AI Team: ", "w")
         print("AI Advantage: ", self.AIAdvantage)
+        self.printBoard()
         
 
 
@@ -832,6 +889,8 @@ class board:
         bCol=self.blackIndexes[pinning]%10
         kRow=self.whiteIndexes["K"]//10
         kCol=self.whiteIndexes["K"]%10
+        if abs(bRow-kRow)!=abs(bCol-kCol) or abs(bCol-kCol)==0 or abs(bRow-kRow)==0:
+            return []
         pIndex=-1
         moveVector=[self.blackIndexes[pinning]]
         #only called if wCol==kCol or wRow==kRow
@@ -844,14 +903,17 @@ class board:
             cInc=i*directionC
             rInc=i*directionR
             if self.fullBoard[bRow+rInc][bCol+cInc].team=='b' or (self.fullBoard[bRow+rInc][bCol+cInc].team=='w' and done==True): 
-                return None
+                return []
             elif self.fullBoard[bRow+rInc][bCol+cInc].team=='w' and done==False:
                 pIndex=10*(bRow+rInc)+bCol+cInc
                 done=True
             else: 
                 moveVector.append(10*(bRow+rInc)+cInc+bCol)#if team='n'
-        moveVector.append(pIndex)
+        moveVector.append(self.whiteIToP[pIndex])
+        print(moveVector)
         return moveVector
+
+
     def inCheck1(self,pressuring:str, team:str): #if king is in check from knight or pawn
         #team corresponds to team in check 
         if team=="w": #either has to capture the piece or move the king. 
@@ -877,7 +939,8 @@ class board:
 
 
     def inCheck2(self,pressuring:str, team:str, direction:list[int]): #if getting checked by bishop, knight or rook
-        #similar situation to pinning, but has to move in the pinning direction
+        #similar situation to pinning, but has to move in the pinning directionD
+        print("in check 2 being called")
         goodMoves=[]
         if team=="w":#white checking black 
             kInd=self.blackIndexes["K"]
@@ -952,6 +1015,7 @@ class board:
                         if j in goodMoves: 
                             overLap.append(j)#gets rid of all the moves that do not block the check.
                     self.blackAvailableMoves[i]=overLap
+            goodMoves.pop(0)
             for i in self.blackAvailableMoves["K"]: 
                 if i in goodMoves: 
                     self.blackAvailableMoves["K"].remove(i)
@@ -964,7 +1028,6 @@ class board:
             pRow=self.blackIndexes[pressuring]//10
             pCol=self.blackIndexes[pressuring]%10
             goodMoves.append(self.blackIndexes[pressuring])#you can take the piece that's pressuring the king and you can move the pieces in the same line between the long range piece and king. 
-
             if direction[0]>0 and direction[1]>0: #king row>p row, kCol>p col
                 pRow+=1
                 pCol+=1
@@ -1032,9 +1095,10 @@ class board:
             for i in self.whiteaVailableMoves["K"]:
                 if i in goodMoves: 
                     self.whiteaVailableMoves["K"].remove(i)
-
+            goodMoves.pop(0)
 
     def move(self, movePiece, indexes):#this will only be called after the gen all moves, so you dont have to run it twice 
+        self.movesLog.append([movePiece,indexes])
         if self.turn%2==0: #if it's white's turn.#availableMoveNum is the index, 
             initialCoords=self.whiteIndexes[movePiece]
             newIndexes=indexes
@@ -1070,6 +1134,7 @@ class board:
                 oldpoints=self.fullBoard[newRow][newCol].val#old piece refers to the one that's being captured.
                 if oldpoints>0:#if a black piece is captured 
                     boldPiece=self.blackIToP[newIndexes]
+                    self.blackAvailableMoves.pop(boldPiece)
                     self.blackIndexes.pop(boldPiece)
                     self.blackPieces.remove(boldPiece)
                     self.blackIToP.pop(newIndexes)
@@ -1095,6 +1160,7 @@ class board:
                         self.whitePieces.append(newPiece)
                         self.whiteIndexes[newPiece]=newIndexes
                         self.whiteIToP[newIndexes]=newPiece
+                        self.whiteaVailableMoves.pop(movePiece)
                         self.whitePieces.remove(movePiece)
                         self.whiteIndexes.pop(movePiece)
                         self.whiteIToP.pop(initialCoords)
@@ -1149,6 +1215,7 @@ class board:
                 oldpoints=self.fullBoard[newRow][newCol].val#old piece refers to the one that's being captured. 
                 if oldpoints>0:#if a black piece is captured 
                     woldPiece=self.whiteIToP[newIndexes]
+                    self.whiteaVailableMoves.pop(woldPiece)
                     self.whiteIndexes.pop(woldPiece)
                     self.whitePieces.remove(woldPiece)
                     self.whiteIToP.pop(newIndexes)
@@ -1166,6 +1233,7 @@ class board:
                         self.blackPoints+=800
                         newP=primeMethods.queenMapping(movePiece)
                         self.blackPieces.append(newP)
+                        self.blackAvailableMoves.pop(movePiece)
                         self.blackPieces.remove(movePiece)
                         self.blackIndexes.pop(movePiece)
                         self.blackIToP.pop(initialCoords)
@@ -1190,6 +1258,7 @@ class board:
         newRow=newI//10
         capturedI=oldRow*10+newCol
         oldPiece=self.blackIToP[capturedI]
+        self.blackAvailableMoves.pop(oldPiece)
         self.blackIToP.pop(capturedI)
         self.blackIndexes.pop(oldPiece)
         self.blackPieces.remove(oldPiece)
@@ -1206,12 +1275,13 @@ class board:
         initialCoords=self.blackIndexes[movePiece]
         oldRow=initialCoords//10
         oldCol=initialCoords%10
-        newI=indexes*-1
+        newI=indexes
         newCol=newI%10
         newRow=newI//10
         capturedI=oldRow*10+newCol
         self.fullBoard[capturedI//10][capturedI%10]=piece(0,'n','n')
         oldPiece=self.whiteIToP[capturedI]
+        self.whiteaVailableMoves.pop(oldPiece)
         self.whiteIToP.pop(capturedI)
         self.whiteIndexes.pop(oldPiece)
         self.whitePieces.remove(oldPiece)
@@ -1289,6 +1359,7 @@ class treeNode:
         
 def search(currGame:treeNode, depth:int, alphaBeta:int):#Later, I want the depth to be predetermined by what stage of the game it is, earlier=less depth. 
     #search function reaches an error when there is a checkmate. It should just iterate back, I'll look into this. 
+    currGame.game.printInfo()
     currGame.game.AIAdvantageEval()
     destroy=False
     miniMax=1000000
@@ -1316,17 +1387,13 @@ def search(currGame:treeNode, depth:int, alphaBeta:int):#Later, I want the depth
                     miniMax=mm#use backtracking/recursion to generate everything. returning will jump to this statement. 
     return miniMax#this parameter is what the AI will base each move on 
 
-def getOpeningMove(game:board):
-    if game.turn==0:
-        return ["p4", 44]
-    elif game.turn==1:
-        #game.blackIndexes={"r1":0,"r2":7,"b1":2,"b2":5,"k1":1,"k2":6,"K":4,"q":3,\
-            #"p1":10,"p2":11,"p3":12,"p4":13,"p5":14,"p6":15,"p7":16,"p8":17}
-        game.whiteIndexes={"r1":70,"r2":77,"b1":72,"b2":75,"k1":71,"k2":76,"K":74,"q":73,\
-            "p1":60,"p2":61,"p3":62,"p4":63,"p5":64,"p6":65,"p7":66,"p8":67}
-        game.whitePieces=["r1","r2","b1","b2","k2","K", "q", "k1", "p1","p2","p3","p4","p5","p6","p7","p8"]
-        game.blackPieces=["r1","r2","b1","b2","k2","K", "q", "k1", "p1","p2","p3","p4","p5","p6","p7","p8"]
+
 def AImove(game:board):
+    #if game.turn<=10: 
+        #tree=openingMoveTree(game.whitePieces, game.blackPieces, game.whiteIndexes, game.blackIndexes)
+        #move=openingMoveGenerator(tree)
+        #if len(move)>0:
+            #return move
     game.allMovesGen()
     game.AIAdvantageEval()
     if game.inPlay==False:#prevent calling the search function if game is over 
@@ -1341,7 +1408,7 @@ def AImove(game:board):
                     reference=copy.deepcopy(game)
                     reference.move(i,j)
                     currSearch=treeNode(reference,0,None)#Edit here
-                    currScore=search(currSearch, 5, alphaBeta)
+                    currScore=search(currSearch, 4, alphaBeta)
                     if bestSearch<currScore: #eventually I want to figure out algorithms for evaluating depth and alphaBeta based on board conditions, but I need to look at runtimes first. 
                         moveIndexes=[i,j]
                         bestSearch=currScore
@@ -1353,7 +1420,7 @@ def AImove(game:board):
                     reference=copy.deepcopy(game)
                     reference.move(i,j)
                     currSearch=treeNode(reference,0,None)#Edit here 
-                    currScore=search(currSearch, 5, alphaBeta)
+                    currScore=search(currSearch, 4, alphaBeta)
                     if bestSearch<currScore: #eventually I want to figure out algorithms for evaluating depth and alphaBeta based on board conditions, but I need to look at runtimes first. 
                         moveIndexes=[i,j]
                         bestSearch=currScore
@@ -1402,6 +1469,7 @@ while stop==False:
             else: 
                 print("Please enter a valid piece")
                 continue
+        
         test.move(a, c)
         test.AIAdvantageEval()
         test.printInfo()
@@ -1450,7 +1518,45 @@ stop2=True
 #print("minimax value")
 #print(minimax)
 #c=input()
+game2=board()
+x=False
+while x==True: 
+    #print("openingMoveTree(",game2.whitePieces,",", game2.blackPieces, ",", game2.whiteIndexes, ",", game2.blackIndexes, ")")
+    game2.allMovesGen()
+    game2.printInfo()
+    if(game2.turn%2==0):
+        print("white turn")
+    else:
+        print("black turn")
+    print("what piece do you want to move?")
+    d=False
+    a=""
+    b=""
+    while d==False:
+        a=input()
+        print("indexes?")
+        b=input()
+        c=reverseMapping(b)
+        if game2.turn%2==0:
+            if a in game2.whitePieces and c in game2.whiteaVailableMoves[a]:
+                d=True
+            else:
+                print("something is wrong")
+        else: 
+            if a in game2.blackPieces and c in game2.blackAvailableMoves[a]:
+                d=True
+            else:
+                print("something is wrong")
+    game2.move(a,c)
+    #p5 E4
+    #p3 C5
+    #k2 F3
+    #p4 D6
+    #p4 D4
+    #p5 D5
 
+
+    
 theGame=board()
 theGame.inPlay=True
 print("Which team would you like to play as? Enter W for white or B for black")
@@ -1473,6 +1579,7 @@ if theGame.AIteamIsWhite ==True:
     while theGame.inPlay==True:
         if theGame.turn%2==0:
             AIMove=AImove(theGame)
+            print(mapping(theGame.whiteIndexes[AIMove[0]]), ' to ', mapping(AIMove[1]) )
             theGame.move(AIMove[0], AIMove[1])
             theGame.allMovesGen()
             theGame.AIAdvantageEval()
@@ -1520,6 +1627,7 @@ else:
     while theGame.inPlay==True:
         if theGame.turn%2==1:
             AIMove=AImove(theGame)
+            print(mapping(theGame.blackIndexes[AIMove[0]]), ' to ', mapping(AIMove[1]) )
             theGame.move(AIMove[0], AIMove[1])
             theGame.allMovesGen()
             theGame.AIAdvantageEval()
@@ -1564,6 +1672,8 @@ else:
                     theGame.allMovesGen()
                     theGame.AIAdvantageEval()
 theGame.AIAdvantageEval()
+a=[]
+b=a[4]
 if theGame.AIAdvantage==0:
     print("It's a tie")
 elif theGame.AIAdvantage<0: 
